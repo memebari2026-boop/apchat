@@ -9,5 +9,9 @@
   "start_url": "/",
   "theme_color": "#2563EB",
   "id": "/apchat",
-  "description": "APCHAT Global Secure Messenger"
+  "description": "APCHAT Global Secure Messenger",
+  "categories": [
+    "social",
+    "social networking"
+  ]
 }
