@@ -1,0 +1,13 @@
+{
+  "background_color": "#FFFFFF",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "APCHAT",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "APCHAT",
+  "start_url": "/",
+  "theme_color": "#2563EB",
+  "id": "/apchat",
+  "description": "APCHAT Global Secure Messenger"
+}
