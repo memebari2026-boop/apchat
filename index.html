@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>APCHAT - Global Messenger</title>
+
+  <!-- PWA Manifest Integration -->
+  <link rel="manifest" id="manifestPlaceholder">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Tailwind & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -25,7 +33,7 @@
 </head>
 <body class="bg-gray-950 text-gray-100 h-screen overflow-hidden font-sans">
 
-  <!-- 1. LANDING & INSTALL PAGE VIEW (First Screen on Link Open) -->
+  <!-- 1. LANDING & DOWNLOAD PAGE VIEW -->
   <div id="landingView" class="fixed inset-0 bg-gray-950 z-50 flex flex-col items-center justify-center p-6">
     <div class="max-w-md w-full bg-gray-900 border border-gray-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
       <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-brand-600 via-brand-accent to-pink-500 flex items-center justify-center text-white shadow-xl font-black text-3xl mx-auto">AP</div>
@@ -42,7 +50,7 @@
           <i data-lucide="globe" class="w-5 h-5"></i> Open Web App
         </button>
 
-        <button onclick="triggerInstall()" class="w-full py-3.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
+        <button id="btnInstallPwa" onclick="triggerInstall()" class="w-full py-3.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
           <i data-lucide="download" class="w-5 h-5"></i> Install App on Phone
         </button>
       </div>
@@ -51,7 +59,7 @@
     </div>
   </div>
 
-  <!-- AUTHENTICATION SCREEN (Hidden initially, opens from landing) -->
+  <!-- AUTHENTICATION SCREEN -->
   <div id="authScreen" class="hidden fixed inset-0 bg-gray-900 z-40 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6 border border-gray-700">
       <div class="flex justify-between items-center">
@@ -214,9 +222,44 @@
     </div>
   </div>
 
-  <!-- FIREBASE & SCRIPT LOGIC -->
+  <!-- SCRIPT LOGIC & PWA GENERATOR -->
   <script>
     lucide.createIcons();
+
+    // Generate Dynamic PWA Manifest to enable installation
+    const manifestData = {
+      "name": "APCHAT Messenger",
+      "short_name": "APCHAT",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#030712",
+      "theme_color": "#2563eb",
+      "icons": [
+        {
+          "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=192&auto=format&fit=crop&q=60",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=512&auto=format&fit=crop&q=60",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    };
+
+    const stringManifest = JSON.stringify(manifestData);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
+
+    // Register simple Service Worker
+    if ('serviceWorker' in navigator) {
+      const swCode = `self.addEventListener('fetch', function(e) {});`;
+      const swBlob = new Blob([swCode], { type: 'text/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyD7ZgOGN87vLRu0-BKaAm5e5c8CKbFWiYs",
@@ -261,7 +304,7 @@
           deferredPrompt = null;
         });
       } else {
-        alert('To install on mobile: Tap your browser menu (3 dots) and select "Add to Home screen" or "Install App".');
+        alert('আপনার ব্রাউজারের ৩-ডট (Menu) বাটনে ক্লিক করে "Add to Home screen" বা "Install app" নির্বাচন করুন। এটি আপনার ফোনে সম্পূর্ণ অ্যাপ হিসেবে যুক্ত হয়ে যাবে!');
       }
     }
 
