@@ -1,18 +1,22 @@
 {
-  "background_color": "#FFFFFF",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "APCHAT",
-  "orientation": "any",
-  "scope": "/",
+  "id": "./",
+  "name": "APCHAT - Global Messenger",
   "short_name": "APCHAT",
-  "start_url": "/",
-  "theme_color": "#2563EB",
-  "id": "/apchat",
-  "description": "APCHAT Global Secure Messenger",
+  "description": "APCHAT Global Real-Time Secure Messenger",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "background_color": "#030712",
+  "theme_color": "#2563eb",
+  "lang": "en",
+  "dir": "ltr",
   "categories": [
     "social",
-    "social networking"
+    "communication"
   ],
   "icons": [
     {
