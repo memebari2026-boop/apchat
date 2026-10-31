@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#030712;color:#f9fafb;font-family:Arial,sans-serif;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .hidden{display:none!important}button{cursor:pointer}input,select,textarea{outline:none}.brand{background:linear-gradient(120deg,#2563eb,#7c3aed)}
@@ -118,7 +117,17 @@ const firebaseConfig={
  measurementId:"G-5H1JWCGWN8"
 };
 firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth(),db=firebase.database(),storage=firebase.storage();
+const auth=firebase.auth(),db=firebase.database();
+const CLOUDINARY_CLOUD_NAME="yio4kivy";
+const CLOUDINARY_UPLOAD_PRESET="apchat_unsigned";
+async function uploadToCloudinary(file,resourceType){
+ const form=new FormData();form.append("file",file);form.append("upload_preset",CLOUDINARY_UPLOAD_PRESET);form.append("folder","apchat");
+ const endpoint=`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+ const response=await fetch(endpoint,{method:"POST",body:form});
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error?.message||"Cloudinary upload failed");
+ return data.secure_url;
+}
 const $=id=>document.getElementById(id);
 const fallback='https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
 let currentUser=null,activeChatUserId=null,allUsers={},friendships={},incomingRequests={},blockedUsers={},chatListeners=[],listenersStarted=false,registrationInProgress=false;
@@ -313,14 +322,13 @@ async function postStory(){
   const file=pendingStoryFile,isVideo=file.type.startsWith('video/'),music=$('storyMusic').value,duration=Math.max(1,Math.min(60,Number($('musicDuration').value)||15));
   if(isVideo&&await getVideoDuration(file)>60.05)throw Error('ভিডিও ৬০ সেকেন্ডের বেশি হতে পারবে না।');
   const key=db.ref('stories/'+currentUser.uid).push().key,base='stories/'+currentUser.uid+'/'+key;
-  const mediaRef=storage.ref(base+'/'+(isVideo?'story-video':'story-image'));
-  const snap=await mediaRef.put(file,{contentType:file.type});const mediaUrl=await snap.ref.getDownloadURL();
-  let musicUrl='';if(music!=='none'){const audio=makeOriginalMusic(music,duration);const aRef=storage.ref(base+'/music.wav');const aSnap=await aRef.put(audio,{contentType:'audio/wav'});musicUrl=await aSnap.ref.getDownloadURL()}
+  const mediaUrl=await uploadToCloudinary(file,isVideo?'video':'image');
+  let musicUrl='';if(music!=='none'){const audio=makeOriginalMusic(music,duration);musicUrl=await uploadToCloudinary(audio,'video')}
   const audience={};selectedStoryFriends.forEach(uid=>audience[uid]=true);
-  const record={mediaUrl,mediaType:isVideo?'video':'image',musicUrl,musicType:music,musicDuration:music==='none'?0:duration,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:Date.now(),expiresAt:Date.now()+86400000};
+  const record={mediaUrl,image:mediaUrl,mediaType:isVideo?'video':'image',musicUrl,musicType:music,musicDuration:music==='none'?0:duration,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:Date.now(),expiresAt:Date.now()+86400000};
   await db.ref('stories/'+currentUser.uid+'/'+key).set(record);
   $('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;selectedStoryFriends.clear();$('storyInput').value='';alert('Story posted successfully');await loadStories();
- }catch(e){alert('Story পোস্ট হয়নি: '+(e.message||e)+'\nFirebase Storage চালু ও Storage Rules সেট করা আছে কি না দেখুন।')}
+ }catch(e){alert('Story পোস্ট হয়নি: '+(e.message||e)+'\nCloudinary Upload Preset-এর নাম ও Unsigned সেটিংস পরীক্ষা করুন।')}
  finally{btn.disabled=false;btn.textContent='Post Story'}
 }
 async function loadStories(){
