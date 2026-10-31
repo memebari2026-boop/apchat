@@ -111,7 +111,18 @@ function stopListeners(){rootListeners.forEach(x=>detach(x.path,x.cb,x.event||'v
 async function logout(){if(!confirm('লগআউট করবেন?'))return;stopListeners();await auth.signOut()}
 function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
 function startListeners(){if(!currentUser||listenersStarted)return;listenersStarted=true;
- watch('profileDirectory',v=>{allUsers=v;renderUI();renderStoryFriendChoices()});
+ watch('profiles',v=>{
+  // Backward-compatible source of truth: existing APCHAT accounts and friends live here.
+  const normalized={};
+  Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')normalized[uid]={...p,uid:p.uid||uid};});
+  allUsers=normalized;
+  // Merge newer directory-only entries without replacing existing profile records.
+  db.ref('profileDirectory').once('value').then(ds=>{
+    Object.entries(ds.val()||{}).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
+    renderUI();renderStoryFriendChoices();
+  }).catch(()=>{renderUI();renderStoryFriendChoices()});
+  renderUI();renderStoryFriendChoices();
+ });
  watch('friends/'+currentUser.uid,v=>{friendships=v;renderUI();renderStoryFriendChoices();loadStories()});
  watch('chatAccess/'+currentUser.uid,v=>{chatAccess=v;renderUI()});
  watch('friendRequests/'+currentUser.uid,v=>{incomingRequests=v;renderUI()});
@@ -173,7 +184,7 @@ async function openChat(uid){
   if(friendships[uid]!=='accepted'&&chatAccess[uid]!==true){alert('আগে Friend Request অথবা Message Request গ্রহণ করতে হবে।');return;}
   if(blockedUsers[uid]){alert('এই ব্যবহারকারীকে আপনি ব্লক করেছেন।');return;}
   let u=allUsers[uid];
-  if(!u){const profileSnap=await db.ref('profileDirectory/'+uid).once('value');u=profileSnap.val();if(!u){alert('ব্যবহারকারীর প্রোফাইল পাওয়া যায়নি।');return;}allUsers[uid]=u;}
+  if(!u){const profileSnap=await db.ref('profiles/'+uid).once('value');u=profileSnap.val();if(u)u={...u,uid:u.uid||uid};if(!u){const directorySnap=await db.ref('profileDirectory/'+uid).once('value');u=directorySnap.val();}if(!u){alert('ব্যবহারকারীর প্রোফাইল পাওয়া যায়নি।');return;}allUsers[uid]=u;}
   // Read the other person's block entry before opening. Rules must allow either participant to read this one pair entry.
   const remoteBlockSnap=await db.ref('blocked/'+uid+'/'+currentUser.uid).once('value');
   if(remoteBlockSnap.val()===true){alert('এই ব্যবহারকারী আপনাকে ব্লক করেছেন।');return;}
