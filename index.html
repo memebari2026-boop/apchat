@@ -113,6 +113,7 @@ const db = firebase.database();
 let currentUser = null, activeChatUserId = null;
 let allUsers = {}, friendships = {}, incomingRequests = {}, outgoingRequests = {}, blockedUsers = {};
 let chatListener = null, listenersStarted = false;
+let registrationInProgress = false;
 
 const $ = id => document.getElementById(id);
 const avatarFallback = 'https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
@@ -145,38 +146,58 @@ function authError(e){
     'auth/user-not-found':'Account not found.',
     'auth/wrong-password':'Incorrect phone number or password.',
     'auth/invalid-credential':'Incorrect phone number or password.',
-    'auth/network-request-failed':'Internet connection failed.'
+    'auth/invalid-login-credentials':'Incorrect phone number or password.',
+    'auth/network-request-failed':'Internet connection failed.',
+    'auth/too-many-requests':'Too many attempts. Please try again later.',
+    'PERMISSION_DENIED':'Database permission denied. Please check Firebase Rules.'
   };
   return map[e.code] || (e.message||'Authentication failed.');
 }
 async function handleRegister(){
+  if(registrationInProgress)return;
   const name=$('regName').value.trim(), handle=cleanHandle($('regHandle').value);
   const phone=cleanPhone($('regPhone').value), password=$('regPassword').value, privacy=$('regPrivacy').value;
   if(!name||!handle||!phone||!password)return status('সব ঘর পূরণ করুন।');
   if(!/^[a-z0-9_]{3,24}$/.test(handle))return status('APCHAT ID ৩-২৪ অক্ষর: ইংরেজি, সংখ্যা বা _ ব্যবহার করুন।');
   if(phone.length<7||phone.length>15)return status('সঠিক ফোন নম্বর দিন।');
   if(password.length<6)return status('Password কমপক্ষে ৬ অক্ষরের হতে হবে।');
-  $('registerBtn').disabled=true; status('অ্যাকাউন্ট তৈরি হচ্ছে...');
-  let credential=null, handleReserved=false;
+
+  registrationInProgress=true;
+  $('registerBtn').disabled=true;
+  status('অ্যাকাউন্ট তৈরি হচ্ছে...');
+  let credential=null, handleReserved=false, handleRef=null;
   try{
     credential=await auth.createUserWithEmailAndPassword(phoneEmail(phone),password);
     const uid=credential.user.uid;
-    const handleRef=db.ref('handles/'+handle);
+    handleRef=db.ref('handles/'+handle);
     const tx=await handleRef.transaction(current=>current===null?uid:undefined);
     if(!tx.committed)throw new Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে।');
     handleReserved=true;
     const profile={uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};
     await db.ref('profiles/'+uid).set(profile);
-    currentUser=profile; showApp();
+    currentUser=profile;
+    registrationInProgress=false;
+    showApp();
+    status('');
   }catch(e){
-    if(handleReserved){
-      try{await db.ref('handles/'+handle).remove();}catch(_){}
+    if(handleReserved && handleRef){
+      try{await handleRef.remove();}catch(cleanupError){console.error('Handle cleanup failed:',cleanupError);}
     }
     if(credential && credential.user){
-      try{await credential.user.delete();}catch(_){}
+      try{
+        await credential.user.delete();
+      }catch(deleteError){
+        console.error('Auth cleanup failed:',deleteError);
+        try{await auth.signOut();}catch(signOutError){console.error(signOutError);}
+      }
     }
-    status(e.message.includes('APCHAT ID')?e.message:authError(e));
-  }finally{$('registerBtn').disabled=false;}
+    currentUser=null;
+    showAuth();
+    status(e.message && e.message.includes('APCHAT ID')?e.message:authError(e));
+  }finally{
+    registrationInProgress=false;
+    $('registerBtn').disabled=false;
+  }
 }
 async function handleLogin(){
   const phone=cleanPhone($('loginPhone').value), password=$('loginPassword').value;
@@ -188,11 +209,14 @@ async function handleLogin(){
 }
 async function logout(){
   if(!confirm('Are you sure you want to logout?'))return;
+  stopListeners();
   await auth.signOut();
 }
 function stopListeners(){
   if(!currentUser)return;
   ['profiles','friends/'+currentUser.uid,'friendRequests/'+currentUser.uid,'messageRequests/'+currentUser.uid,'blocked/'+currentUser.uid].forEach(path=>db.ref(path).off());
+  db.ref('messageRequests').off();
+  if(chatListener){chatListener.forEach(x=>db.ref(x.path).off('value',x.callback));chatListener=null;}
   listenersStarted=false;
 }
 function startListeners(){
@@ -200,9 +224,7 @@ function startListeners(){
   db.ref('profiles').on('value',s=>{allUsers=s.val()||{};renderUI();});
   db.ref('friends/'+currentUser.uid).on('value',s=>{friendships=s.val()||{};renderUI();});
   db.ref('friendRequests/'+currentUser.uid).on('value',s=>{incomingRequests=s.val()||{};renderUI();});
-  db.ref('messageRequests/'+currentUser.uid).on('value',s=>{incomingRequests={...incomingRequests,...(s.val()||{})};renderUI();});
   db.ref('blocked/'+currentUser.uid).on('value',s=>{blockedUsers=s.val()||{};renderUI();});
-  db.ref('messageRequests').orderByChild('sender').equalTo(currentUser.uid).on('value',s=>{outgoingRequests=s.val()||{};});
 }
 function switchTab(tab){
   ['chats','requests','people'].forEach(n=>{
@@ -214,7 +236,8 @@ function switchTab(tab){
 function renderUI(){
   if(!currentUser)return;
   const chats=$('chatsView'), req=$('friendRequestsList'), msg=$('messageRequestsList'), people=$('peopleView');
-  chats.innerHTML='';req.innerHTML='';msg.innerHTML='';people.innerHTML='';
+  chats.innerHTML='';req.innerHTML='';msg.innerHTML='';
+  people.innerHTML='';
   const q=$('searchInput').value.trim().toLowerCase().replace(/^@/,'');
   Object.values(allUsers).forEach(u=>{
     if(!u||!u.uid||u.uid===currentUser.uid||blockedUsers[u.uid])return;
@@ -233,7 +256,7 @@ function renderUI(){
     }
   });
   if(!req.innerHTML)req.innerHTML='<p class="text-xs text-gray-500">No friend requests.</p>';
-  if(!msg.innerHTML)msg.innerHTML='<p class="text-xs text-gray-500">No message requests.</p>';
+  if(!msg.innerHTML)msg.innerHTML='<p class="text-xs text-gray-500">Message requests are not enabled yet.</p>';
   refreshIcons();
 }
 function handleSearch(){renderUI();}
@@ -305,10 +328,15 @@ async function savePrivacySettings(){
 }
 async function deleteAccountDataWarning(){alert('Account deletion is not available in this version.');}
 auth.onAuthStateChanged(async user=>{
-  if(!user){currentUser=null;allUsers={};friendships={};incomingRequests={};blockedUsers={};showAuth();return;}
+  if(registrationInProgress)return;
+  if(!user){currentUser=null;allUsers={};friendships={};incomingRequests={};outgoingRequests={};blockedUsers={};listenersStarted=false;showAuth();return;}
   try{
     const s=await db.ref('profiles/'+user.uid).once('value');
-    if(!s.exists()){await auth.signOut();status('Profile not found. Please register again.');return;}
+    if(!s.exists()){
+      await auth.signOut();
+      status('Profile not found. Registration may not have completed. Please register again.');
+      return;
+    }
     currentUser=s.val();showApp();
   }catch(e){status('Profile load failed: '+e.message);await auth.signOut();}
 });
