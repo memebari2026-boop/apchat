@@ -22,6 +22,8 @@
 #storyModal{position:fixed;inset:0;background:#000e;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px}
 #storyModal img{max-width:100%;max-height:75vh;object-fit:contain;border-radius:12px}
 #messagesContainer{overflow-y:auto}
+.privacy-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #374151;border-radius:12px;background:#111827}
+.privacy-choice:has(input:checked){border-color:#3b82f6;background:#172554}
 </style>
 </head>
 <body>
@@ -73,12 +75,34 @@
   </div>
  </main>
 </section>
+
 <div id="privacyModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"><div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-3">
  <h3 class="font-bold text-lg">Account Settings</h3><label class="text-xs text-gray-400">Account privacy</label><select id="privacySelect" class="w-full bg-gray-800 p-3 rounded-xl text-sm"><option value="public">Public</option><option value="private">Private</option></select>
  <div class="flex justify-end gap-2"><button onclick="closePrivacyModal()" class="px-4 py-2 bg-gray-700 rounded-lg text-sm">Cancel</button><button onclick="savePrivacySettings()" class="px-4 py-2 brand rounded-lg text-sm">Save</button></div>
- </div></div>
+</div></div>
+
+<div id="storyPrivacyModal" class="hidden fixed inset-0 bg-black/80 z-[1200] flex items-center justify-center p-4 overflow-y-auto">
+ <div class="bg-gray-900 border border-gray-700 rounded-2xl p-5 w-full max-w-md my-auto space-y-3">
+  <div class="flex justify-between items-center"><h3 class="font-bold text-lg">Story Privacy</h3><button onclick="cancelStory()" class="text-gray-400 text-2xl">×</button></div>
+  <p class="text-xs text-gray-400">কে আপনার Story দেখতে পারবে?</p>
+  <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="public" checked onchange="privacyChanged()"><span><b class="block text-sm">Public</b><small class="text-gray-400">সবাই দেখতে পারবে</small></span></label>
+  <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="friends" onchange="privacyChanged()"><span><b class="block text-sm">Only Friends</b><small class="text-gray-400">শুধু আপনার Accepted Friends</small></span></label>
+  <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="custom" onchange="privacyChanged()"><span><b class="block text-sm">Custom Friends</b><small class="text-gray-400">শুধু নির্বাচিত বন্ধুরা</small></span></label>
+  <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="hide" onchange="privacyChanged()"><span><b class="block text-sm">Hide From</b><small class="text-gray-400">নির্বাচিত বন্ধুরা Story দেখতে পারবে না</small></span></label>
+  <div id="storyAudienceWrap" class="hidden border border-gray-700 rounded-xl p-3">
+   <div class="flex justify-between items-center mb-2"><b id="storyAudienceTitle" class="text-sm">Select friends</b><button onclick="toggleAllStoryFriends()" class="text-xs text-blue-400">Select all</button></div>
+   <input id="storyFriendSearch" oninput="renderStoryFriendChoices()" placeholder="বন্ধুর নাম বা @ID খুঁজুন" class="w-full bg-gray-800 p-2 rounded-lg text-sm mb-2">
+   <div id="storyFriendChoices" class="max-h-48 overflow-y-auto space-y-2"></div>
+   <p id="storyFriendCount" class="text-xs text-gray-400 mt-2">০ জন নির্বাচিত</p>
+  </div>
+  <p class="text-[11px] text-amber-300">নোট: বর্তমান Firebase Rules-এ Story read access লগইন করা সবার জন্য খোলা। তাই এই Privacy এখন অ্যাপের ফিল্টার; সম্পূর্ণ সার্ভার-সুরক্ষিত নয়।</p>
+  <div class="flex gap-2"><button onclick="cancelStory()" class="flex-1 py-3 bg-gray-700 rounded-xl">Cancel</button><button id="postStoryBtn" onclick="postStory()" class="flex-1 py-3 brand rounded-xl font-bold">Post Story</button></div>
+ </div>
+</div>
+
 <input id="photoInput" type="file" accept="image/*" hidden onchange="uploadPhoto(this.files[0])">
 <input id="storyInput" type="file" accept="image/*" hidden onchange="uploadStory(this.files[0])">
+
 <script>
 const firebaseConfig={
  apiKey:"AIzaSyD7ZgOGN87vLRu0-BKaAm5e5c8CKbFWiYs",
@@ -95,6 +119,7 @@ const auth=firebase.auth(),db=firebase.database();
 const $=id=>document.getElementById(id);
 const fallback='https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
 let currentUser=null,activeChatUserId=null,allUsers={},friendships={},incomingRequests={},blockedUsers={},chatListeners=[],listenersStarted=false,registrationInProgress=false;
+let pendingStoryFile=null,pendingStoryData=null,selectedStoryFriends=new Set();
 function status(t){$('authStatus').textContent=t||''}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function cleanPhone(v){let d=String(v).replace(/\D/g,'');if(d.startsWith('880')&&d.length===13)d='0'+d.slice(3);return d}
@@ -152,8 +177,8 @@ function stopListeners(){
 }
 function startListeners(){
  if(!currentUser||listenersStarted)return;listenersStarted=true;
- db.ref('profiles').on('value',s=>{allUsers=s.val()||{};renderUI()});
- db.ref('friends/'+currentUser.uid).on('value',s=>{friendships=s.val()||{};renderUI()});
+ db.ref('profiles').on('value',s=>{allUsers=s.val()||{};renderUI();renderStoryFriendChoices()});
+ db.ref('friends/'+currentUser.uid).on('value',s=>{friendships=s.val()||{};renderUI();renderStoryFriendChoices();loadStories()});
  db.ref('friendRequests/'+currentUser.uid).on('value',s=>{incomingRequests=s.val()||{};renderUI()});
  db.ref('blocked/'+currentUser.uid).on('value',s=>{blockedUsers=s.val()||{};renderUI()});
 }
@@ -220,13 +245,67 @@ function compressImage(file,max=700){
 async function uploadPhoto(file){try{const data=await compressImage(file,500);await db.ref('profiles/'+currentUser.uid+'/avatar').set(data);currentUser.avatar=data;$('myAvatar').src=data;renderUI();alert('Profile photo updated')}catch(e){alert('ছবি আপলোড হয়নি: '+e.message)}$('photoInput').value=''}
 async function uploadStory(file){
  try{
-  const data=await compressImage(file,700),mode=prompt('Story privacy লিখুন: public / friends / custom / hide','friends');if(!mode)return;
-  const privacy=mode.trim().toLowerCase();if(!['public','friends','custom','hide'].includes(privacy))return alert('সঠিক অপশন দিন।');
-  let handles='';if(privacy==='custom'||privacy==='hide')handles=prompt('APCHAT ID লিখুন (কমা দিয়ে আলাদা করুন, @ ছাড়া):','')||'';
+  if(!file)throw Error('একটি ছবি নির্বাচন করুন।');
+  pendingStoryFile=file;
+  $('storyPrivacyModal').classList.remove('hidden');
+  document.querySelector('input[name="storyPrivacy"][value="public"]').checked=true;
+  selectedStoryFriends.clear();
+  $('storyFriendSearch').value='';
+  privacyChanged();
+ }catch(e){alert('Story প্রস্তুত হয়নি: '+e.message);$('storyInput').value=''}
+}
+function selectedStoryPrivacy(){return document.querySelector('input[name="storyPrivacy"]:checked')?.value||'public'}
+function privacyChanged(){
+ const mode=selectedStoryPrivacy(),wrap=$('storyAudienceWrap');
+ wrap.classList.toggle('hidden',mode!=='custom'&&mode!=='hide');
+ $('storyAudienceTitle').textContent=mode==='custom'?'যাদের Story দেখাতে চান':'যাদের কাছ থেকে Story লুকাবেন';
+ renderStoryFriendChoices();
+}
+function getAcceptedFriends(){
+ return Object.keys(friendships||{}).filter(uid=>friendships[uid]==='accepted'&&allUsers[uid]).map(uid=>allUsers[uid]);
+}
+function renderStoryFriendChoices(){
+ const box=$('storyFriendChoices');if(!box)return;
+ const mode=selectedStoryPrivacy();if(mode!=='custom'&&mode!=='hide'){box.innerHTML='';$('storyFriendCount').textContent='';return}
+ const q=$('storyFriendSearch').value.trim().toLowerCase().replace(/^@/,'');
+ const friends=getAcceptedFriends().filter(u=>!q||String(u.name||'').toLowerCase().includes(q)||String(u.handle||'').toLowerCase().includes(q));
+ box.innerHTML='';
+ if(!friends.length){box.innerHTML='<p class="text-xs text-gray-400 p-2">কোনো Friend পাওয়া যায়নি। আগে Friends যুক্ত করুন।</p>'}
+ friends.forEach(u=>{
+  const label=document.createElement('label');label.className='flex items-center gap-3 p-2 rounded-lg bg-gray-800';
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=selectedStoryFriends.has(u.uid);cb.onchange=()=>{if(cb.checked)selectedStoryFriends.add(u.uid);else selectedStoryFriends.delete(u.uid);updateStoryFriendCount()};
+  const img=document.createElement('img');img.src=u.avatar||fallback;img.className='w-8 h-8 rounded-full object-cover';
+  const name=document.createElement('span');name.className='text-sm';name.textContent=(u.name||'User')+' · @'+(u.handle||'');
+  label.append(cb,img,name);box.append(label);
+ });
+ updateStoryFriendCount();
+}
+function updateStoryFriendCount(){$('storyFriendCount').textContent=selectedStoryFriends.size+' জন নির্বাচিত'}
+function toggleAllStoryFriends(){
+ const friends=getAcceptedFriends(),mode=selectedStoryPrivacy();
+ if(mode!=='custom'&&mode!=='hide')return;
+ const visible=friends.filter(u=>{const q=$('storyFriendSearch').value.trim().toLowerCase().replace(/^@/,'');return !q||String(u.name||'').toLowerCase().includes(q)||String(u.handle||'').toLowerCase().includes(q)});
+ const all=visible.length&&visible.every(u=>selectedStoryFriends.has(u.uid));
+ visible.forEach(u=>all?selectedStoryFriends.delete(u.uid):selectedStoryFriends.add(u.uid));
+ renderStoryFriendChoices();
+}
+function cancelStory(){
+ $('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;pendingStoryData=null;selectedStoryFriends.clear();$('storyInput').value='';
+}
+async function postStory(){
+ const mode=selectedStoryPrivacy();
+ if((mode==='custom'||mode==='hide')&&selectedStoryFriends.size===0)return alert('কমপক্ষে একজন Friend নির্বাচন করুন।');
+ if(!pendingStoryFile)return alert('Story ছবি পাওয়া যায়নি। আবার ছবি নির্বাচন করুন।');
+ const btn=$('postStoryBtn');btn.disabled=true;btn.textContent='Uploading...';
+ try{
+  const data=await compressImage(pendingStoryFile,700);
+  const audience={};selectedStoryFriends.forEach(uid=>audience[uid]=true);
   const ref=db.ref('stories/'+currentUser.uid).push();
-  await ref.set({image:data,name:currentUser.name,handle:currentUser.handle,privacy,handles:handles.split(',').map(x=>cleanHandle(x)).filter(Boolean),createdAt:Date.now(),expiresAt:Date.now()+86400000});
-  alert('Story posted');loadStories();
- }catch(e){alert('Story পোস্ট হয়নি: '+e.message)}$('storyInput').value='';
+  await ref.set({image:data,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:Date.now(),expiresAt:Date.now()+86400000});
+  $('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;selectedStoryFriends.clear();$('storyInput').value='';
+  alert('Story posted successfully');await loadStories();
+ }catch(e){alert('Story পোস্ট হয়নি: '+(e.message||e))}
+ finally{btn.disabled=false;btn.textContent='Post Story'}
 }
 async function loadStories(){
  const bar=$('apStories');if(!bar||!currentUser)return;bar.innerHTML='';
@@ -235,20 +314,20 @@ async function loadStories(){
   const snap=await db.ref('stories').once('value'),data=snap.val()||{},now=Date.now();
   for(const [uid,items] of Object.entries(data)){
    for(const [id,s] of Object.entries(items||{})){
-    if(!s||!s.image||!s.expiresAt||s.expiresAt<now){db.ref('stories/'+uid+'/'+id).remove();continue}
+    if(!s||!s.image||!s.expiresAt||s.expiresAt<now){if(uid===currentUser.uid)db.ref('stories/'+uid+'/'+id).remove();continue}
     if(uid!==currentUser.uid&&!canSeeStory(uid,s))continue;
     const b=document.createElement('button');b.className='apStory';const im=document.createElement('img');im.src=s.image;const label=document.createElement('span');label.className='block truncate';label.textContent=s.name||'User';b.append(im,label);b.onclick=()=>viewStory(s);bar.append(b);
    }
   }
- }catch(e){console.error('Stories load error',e)}
+ }catch(e){console.error('Stories load error',e);alert('Story load failed: '+e.message)}
 }
 function canSeeStory(uid,s){
- if(s.privacy==='public'||!s.privacy)return true;
- const isFriend=friendships[uid]==='accepted';
- const ids=(s.handles||[]).map(cleanHandle),mine=cleanHandle(currentUser.handle);
- if(s.privacy==='friends')return isFriend;
- if(s.privacy==='custom')return ids.includes(mine);
- if(s.privacy==='hide')return !ids.includes(mine);
+ if(uid===currentUser.uid)return true;
+ const mode=s.privacy||'public',isFriend=friendships[uid]==='accepted',audience=s.audience||{};
+ if(mode==='public')return true;
+ if(mode==='friends')return isFriend;
+ if(mode==='custom')return audience[currentUser.uid]===true;
+ if(mode==='hide')return !audience[currentUser.uid];
  return false;
 }
 function viewStory(s){
