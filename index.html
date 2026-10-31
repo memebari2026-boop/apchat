@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#030712;color:#f9fafb;font-family:Arial,sans-serif;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .hidden{display:none!important}button{cursor:pointer}input,select,textarea{outline:none}.brand{background:linear-gradient(120deg,#2563eb,#7c3aed)}
@@ -84,6 +85,8 @@
 <div id="storyPrivacyModal" class="hidden fixed inset-0 bg-black/80 z-[1200] flex items-center justify-center p-4 overflow-y-auto">
  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-5 w-full max-w-md my-auto space-y-3">
   <div class="flex justify-between items-center"><h3 class="font-bold text-lg">Story Privacy</h3><button onclick="cancelStory()" class="text-gray-400 text-2xl">×</button></div>
+  <div id="storyPreview" class="text-xs text-gray-300">Story preview</div>
+  <div class="rounded-xl border border-gray-700 p-3 space-y-2"><b class="text-sm">🎵 APCHAT Original Music</b><select id="storyMusic" class="w-full bg-gray-800 p-2 rounded-lg text-sm"><option value="none">No music</option><option value="calm">Calm Piano (original)</option><option value="dream">Dream Bells (original)</option><option value="energy">Soft Energy (original)</option></select><label class="text-xs text-gray-400">গানের দৈর্ঘ্য: <span id="musicDurationLabel">15</span> সেকেন্ড</label><input id="musicDuration" type="range" min="1" max="60" value="15" class="w-full" oninput="$('musicDurationLabel').textContent=this.value"></div>
   <p class="text-xs text-gray-400">কে আপনার Story দেখতে পারবে?</p>
   <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="public" checked onchange="privacyChanged()"><span><b class="block text-sm">Public</b><small class="text-gray-400">সবাই দেখতে পারবে</small></span></label>
   <label class="privacy-choice"><input type="radio" name="storyPrivacy" value="friends" onchange="privacyChanged()"><span><b class="block text-sm">Only Friends</b><small class="text-gray-400">শুধু আপনার Accepted Friends</small></span></label>
@@ -101,7 +104,7 @@
 </div>
 
 <input id="photoInput" type="file" accept="image/*" hidden onchange="uploadPhoto(this.files[0])">
-<input id="storyInput" type="file" accept="image/*" hidden onchange="uploadStory(this.files[0])">
+<input id="storyInput" type="file" accept="image/*,video/*" hidden onchange="uploadStory(this.files[0])">
 
 <script>
 const firebaseConfig={
@@ -115,7 +118,7 @@ const firebaseConfig={
  measurementId:"G-5H1JWCGWN8"
 };
 firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth(),db=firebase.database();
+const auth=firebase.auth(),db=firebase.database(),storage=firebase.storage();
 const $=id=>document.getElementById(id);
 const fallback='https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
 let currentUser=null,activeChatUserId=null,allUsers={},friendships={},incomingRequests={},blockedUsers={},chatListeners=[],listenersStarted=false,registrationInProgress=false;
@@ -245,14 +248,23 @@ function compressImage(file,max=700){
 async function uploadPhoto(file){try{const data=await compressImage(file,500);await db.ref('profiles/'+currentUser.uid+'/avatar').set(data);currentUser.avatar=data;$('myAvatar').src=data;renderUI();alert('Profile photo updated')}catch(e){alert('ছবি আপলোড হয়নি: '+e.message)}$('photoInput').value=''}
 async function uploadStory(file){
  try{
-  if(!file)throw Error('একটি ছবি নির্বাচন করুন।');
+  if(!file)throw Error('একটি ছবি বা ভিডিও নির্বাচন করুন।');
+  const isVideo=file.type.startsWith('video/'),isImage=file.type.startsWith('image/');
+  if(!isVideo&&!isImage)throw Error('শুধু ছবি বা ভিডিও নির্বাচন করুন।');
+  if(isVideo){const duration=await getVideoDuration(file);if(duration<1||duration>60.05)throw Error('ভিডিও ১ থেকে ৬০ সেকেন্ডের মধ্যে হতে হবে।')}
   pendingStoryFile=file;
+  const preview=$('storyPreview');preview.innerHTML='';const url=URL.createObjectURL(file);const media=document.createElement(isVideo?'video':'img');media.src=url;if(isVideo){media.controls=true;media.className='w-full rounded-lg';media.style.maxHeight='220px'}else{media.className='w-full rounded-lg';media.style.maxHeight='220px';media.style.objectFit='contain'}preview.append(media);
   $('storyPrivacyModal').classList.remove('hidden');
   document.querySelector('input[name="storyPrivacy"][value="public"]').checked=true;
-  selectedStoryFriends.clear();
-  $('storyFriendSearch').value='';
-  privacyChanged();
+  selectedStoryFriends.clear();$('storyFriendSearch').value='';privacyChanged();
  }catch(e){alert('Story প্রস্তুত হয়নি: '+e.message);$('storyInput').value=''}
+}
+function getVideoDuration(file){return new Promise((resolve,reject)=>{const v=document.createElement('video'),u=URL.createObjectURL(file);v.preload='metadata';v.onloadedmetadata=()=>{URL.revokeObjectURL(u);resolve(v.duration)};v.onerror=()=>{URL.revokeObjectURL(u);reject(Error('ভিডিও পড়া যায়নি।'))};v.src=u})}
+function makeOriginalMusic(kind,seconds){
+ const rate=22050,n=Math.floor(rate*seconds),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);const put=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};put(0,'RIFF');v.setUint32(4,36+n*2,true);put(8,'WAVE');put(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,n*2,true);
+ const scales={calm:[261.63,329.63,392,329.63],dream:[392,493.88,587.33,493.88],energy:[220,277.18,329.63,277.18]},notes=scales[kind]||scales.calm;
+ for(let i=0;i<n;i++){const t=i/rate,beat=Math.floor(t/0.5)%notes.length,f=notes[beat],env=Math.min(1,(t%0.5)*12)*Math.max(0,Math.min(1,(seconds-t)*3));const sample=(Math.sin(2*Math.PI*f*t)+.35*Math.sin(2*Math.PI*f*2*t))*0.16*env;v.setInt16(44+i*2,Math.max(-1,Math.min(1,sample))*32767,true)}
+ return new Blob([buf],{type:'audio/wav'});
 }
 function selectedStoryPrivacy(){return document.querySelector('input[name="storyPrivacy"]:checked')?.value||'public'}
 function privacyChanged(){
@@ -295,16 +307,20 @@ function cancelStory(){
 async function postStory(){
  const mode=selectedStoryPrivacy();
  if((mode==='custom'||mode==='hide')&&selectedStoryFriends.size===0)return alert('কমপক্ষে একজন Friend নির্বাচন করুন।');
- if(!pendingStoryFile)return alert('Story ছবি পাওয়া যায়নি। আবার ছবি নির্বাচন করুন।');
+ if(!pendingStoryFile)return alert('Story ফাইল পাওয়া যায়নি। আবার নির্বাচন করুন।');
  const btn=$('postStoryBtn');btn.disabled=true;btn.textContent='Uploading...';
  try{
-  const data=await compressImage(pendingStoryFile,700);
+  const file=pendingStoryFile,isVideo=file.type.startsWith('video/'),music=$('storyMusic').value,duration=Math.max(1,Math.min(60,Number($('musicDuration').value)||15));
+  if(isVideo&&await getVideoDuration(file)>60.05)throw Error('ভিডিও ৬০ সেকেন্ডের বেশি হতে পারবে না।');
+  const key=db.ref('stories/'+currentUser.uid).push().key,base='stories/'+currentUser.uid+'/'+key;
+  const mediaRef=storage.ref(base+'/'+(isVideo?'story-video':'story-image'));
+  const snap=await mediaRef.put(file,{contentType:file.type});const mediaUrl=await snap.ref.getDownloadURL();
+  let musicUrl='';if(music!=='none'){const audio=makeOriginalMusic(music,duration);const aRef=storage.ref(base+'/music.wav');const aSnap=await aRef.put(audio,{contentType:'audio/wav'});musicUrl=await aSnap.ref.getDownloadURL()}
   const audience={};selectedStoryFriends.forEach(uid=>audience[uid]=true);
-  const ref=db.ref('stories/'+currentUser.uid).push();
-  await ref.set({image:data,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:Date.now(),expiresAt:Date.now()+86400000});
-  $('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;selectedStoryFriends.clear();$('storyInput').value='';
-  alert('Story posted successfully');await loadStories();
- }catch(e){alert('Story পোস্ট হয়নি: '+(e.message||e))}
+  const record={mediaUrl,mediaType:isVideo?'video':'image',musicUrl,musicType:music,musicDuration:music==='none'?0:duration,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:Date.now(),expiresAt:Date.now()+86400000};
+  await db.ref('stories/'+currentUser.uid+'/'+key).set(record);
+  $('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;selectedStoryFriends.clear();$('storyInput').value='';alert('Story posted successfully');await loadStories();
+ }catch(e){alert('Story পোস্ট হয়নি: '+(e.message||e)+'\nFirebase Storage চালু ও Storage Rules সেট করা আছে কি না দেখুন।')}
  finally{btn.disabled=false;btn.textContent='Post Story'}
 }
 async function loadStories(){
@@ -314,9 +330,9 @@ async function loadStories(){
   const snap=await db.ref('stories').once('value'),data=snap.val()||{},now=Date.now();
   for(const [uid,items] of Object.entries(data)){
    for(const [id,s] of Object.entries(items||{})){
-    if(!s||!s.image||!s.expiresAt||s.expiresAt<now){if(uid===currentUser.uid)db.ref('stories/'+uid+'/'+id).remove();continue}
+    if(!s||!(s.image||s.mediaUrl)||!s.expiresAt||s.expiresAt<now){if(uid===currentUser.uid)db.ref('stories/'+uid+'/'+id).remove();continue}
     if(uid!==currentUser.uid&&!canSeeStory(uid,s))continue;
-    const b=document.createElement('button');b.className='apStory';const im=document.createElement('img');im.src=s.image;const label=document.createElement('span');label.className='block truncate';label.textContent=s.name||'User';b.append(im,label);b.onclick=()=>viewStory(s);bar.append(b);
+    const b=document.createElement('button');b.className='apStory';const im=document.createElement('img');im.src=s.mediaType==='video'?'https://cdn-icons-png.flaticon.com/512/1179/1179069.png':(s.mediaUrl||s.image);const label=document.createElement('span');label.className='block truncate';label.textContent=s.name||'User';b.append(im,label);b.onclick=()=>viewStory(s);bar.append(b);
    }
   }
  }catch(e){console.error('Stories load error',e);alert('Story load failed: '+e.message)}
@@ -331,8 +347,10 @@ function canSeeStory(uid,s){
  return false;
 }
 function viewStory(s){
- let modal=$('storyModal');if(!modal){modal=document.createElement('div');modal.id='storyModal';modal.onclick=()=>modal.remove();document.body.append(modal)}
- modal.innerHTML='';const card=document.createElement('div');card.className='text-center';const title=document.createElement('p');title.className='mb-3';title.textContent=(s.name||'User')+' · @'+(s.handle||'');const im=document.createElement('img');im.src=s.image;const note=document.createElement('p');note.className='text-xs text-gray-400 mt-3';note.textContent='Tap to close';card.append(title,im,note);modal.append(card);
+ let modal=$('storyModal');if(!modal){modal=document.createElement('div');modal.id='storyModal';document.body.append(modal)}
+ modal.onclick=()=>{const a=modal.querySelector('audio');if(a)a.pause();modal.remove()};modal.innerHTML='';const card=document.createElement('div');card.className='text-center w-full';const title=document.createElement('p');title.className='mb-3';title.textContent=(s.name||'User')+' · @'+(s.handle||'');let media;
+ const url=s.mediaUrl||s.image;if(s.mediaType==='video'){media=document.createElement('video');media.src=url;media.controls=true;media.autoplay=true;media.playsInline=true;media.className='w-full rounded-xl';media.style.maxHeight='75vh'}else{media=document.createElement('img');media.src=url;media.style.maxWidth='100%';media.style.maxHeight='75vh'}
+ card.append(title,media);if(s.musicUrl){const audio=document.createElement('audio');audio.src=s.musicUrl;audio.controls=true;audio.autoplay=true;audio.loop=false;audio.style.width='100%';audio.className='mt-3';card.append(audio)}const note=document.createElement('p');note.className='text-xs text-gray-400 mt-3';note.textContent='Tap outside to close';card.append(note);modal.append(card);
 }
 auth.onAuthStateChanged(async user=>{
  if(registrationInProgress)return;
