@@ -1,10 +1,11 @@
 ```html
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="bn" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Messenger Web</title>
+  <title>Messenger Web App</title>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -13,16 +14,14 @@
       theme: {
         extend: {
           colors: {
-            messenger: {
-              bg: '#050505',
+            msg: {
+              bg: '#000000',
               card: '#121212',
               input: '#242526',
               border: '#2f3031',
               primary: '#0084FF',
-              secondary: '#1877F2',
-              bubbleSelf: '#0084FF',
+              bubbleSelf: '#00D2FF',
               bubblePeer: '#242526',
-              accent: '#E4E6EB',
               textMuted: '#B0B3B8'
             }
           }
@@ -30,10 +29,17 @@
       }
     }
   </script>
+
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Google Fonts (Inter) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Libraries (Modular / Compat for Browser) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -42,7 +48,14 @@
       background-color: #050505;
       color: #E4E6EB;
     }
-    /* Custom Scrollbar */
+
+    /* Custom Chat Background Pattern matching Messenger */
+    .chat-bg-pattern {
+      background-color: #0d0c22;
+      background-image: radial-gradient(#1e1d45 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
     ::-webkit-scrollbar {
       width: 4px;
       height: 4px;
@@ -51,177 +64,139 @@
       background: #3a3b3c;
       border-radius: 4px;
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
+    
     .story-ring {
-      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      background: linear-gradient(45deg, #0084FF, #00D2FF, #a020f0);
     }
-    .pulse-ring {
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
+
+    @keyframes pulse-ring {
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 132, 255, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(0, 132, 255, 0); }
+      70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(0, 132, 255, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 132, 255, 0); }
+    }
+
+    .pulse-animation {
+      animation: pulse-ring 2s infinite;
     }
   </style>
 </head>
-<body class="h-screen w-screen overflow-hidden bg-black text-gray-100 flex justify-center items-center">
+<body class="h-screen w-screen overflow-hidden flex justify-center items-center bg-black">
 
-  <!-- Mobile App Frame Container -->
-  <div class="w-full h-full max-w-md bg-messenger-bg flex flex-col relative overflow-hidden shadow-2xl border-x border-gray-900">
+  <!-- Mobile View Container -->
+  <div class="w-full h-full max-w-md bg-black flex flex-col relative overflow-hidden shadow-2xl border-x border-gray-900">
 
-    <!-- ==================== TOP NAVIGATION / STATUS BAR ==================== -->
-    <header id="top-header" class="px-4 pt-3 pb-2 flex items-center justify-between bg-messenger-bg z-20">
+    <!-- ==================== TOP NAVIGATION / APP HEADER ==================== -->
+    <header id="app-header" class="px-4 pt-3 pb-2 flex items-center justify-between bg-black z-20">
       <div class="flex items-center space-x-3">
-        <h1 class="text-2xl font-bold tracking-tight text-white">Chats</h1>
+        <h1 class="text-2xl font-extrabold tracking-tight text-white">messenger</h1>
       </div>
       <div class="flex items-center space-x-2">
-        <button onclick="openModal('addFriendModal')" class="w-9 h-9 rounded-full bg-messenger-input flex items-center justify-center text-white hover:bg-gray-700 transition">
-          <i class="fa-solid fa-user-plus text-sm"></i>
-        </button>
-        <button onclick="openModal('newChatModal')" class="w-9 h-9 rounded-full bg-messenger-input flex items-center justify-center text-white hover:bg-gray-700 transition">
+        <button onclick="openModal('editProfileModal')" class="w-9 h-9 rounded-full bg-msg-input flex items-center justify-center text-white hover:bg-gray-800">
           <i class="fa-solid fa-pen text-sm"></i>
+        </button>
+        <button onclick="openModal('addFriendModal')" class="w-9 h-9 rounded-full bg-msg-input flex items-center justify-center text-white hover:bg-gray-800">
+          <i class="fa-brands fa-facebook-f text-sm"></i>
         </button>
       </div>
     </header>
 
-    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <!-- ==================== MAIN SCREEN VIEWPORT ==================== -->
     <div id="app-viewport" class="flex-1 relative overflow-hidden flex flex-col">
 
-      <!-- ---------------- TAB 1: CHATS LIST ---------------- -->
+      <!-- ---------------- TAB 1: CHATS ---------------- -->
       <section id="tab-chats" class="flex-1 overflow-y-auto flex flex-col space-y-3 pb-16">
-        <!-- Search Bar -->
+        <!-- Search Input -->
         <div class="px-4">
-          <div class="bg-messenger-input text-messenger-textMuted flex items-center px-3.5 py-2 rounded-full space-x-2.5">
+          <div class="bg-msg-input text-msg-textMuted flex items-center px-3.5 py-2 rounded-full space-x-2.5">
             <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
             <input type="text" id="chatSearchInput" onkeyup="filterChats()" placeholder="Ask Meta AI or search" class="bg-transparent border-none outline-none w-full text-sm text-white placeholder-gray-400">
             <i class="fa-solid fa-shapes text-gray-400 text-xs"></i>
           </div>
         </div>
 
-        <!-- Story Tray -->
+        <!-- Horizontal Story Tray -->
         <div class="px-4">
           <div class="flex space-x-3 overflow-x-auto no-scrollbar py-1">
             <!-- Add Story -->
-            <div onclick="triggerStoryUpload()" class="flex flex-col items-center space-y-1 cursor-pointer flex-shrink-0">
-              <div class="w-14 h-14 rounded-full bg-messenger-input flex items-center justify-center border-2 border-dashed border-gray-600 relative">
+            <div onclick="addStoryPrompt()" class="flex flex-col items-center space-y-1 cursor-pointer flex-shrink-0">
+              <div class="w-14 h-14 rounded-full bg-msg-input flex items-center justify-center border-2 border-dashed border-gray-600 relative">
                 <i class="fa-solid fa-plus text-xl text-white"></i>
               </div>
-              <span class="text-xs text-gray-400 max-w-[64px] truncate text-center">Your story</span>
+              <span class="text-xs text-gray-400 max-w-[64px] truncate text-center">Create story</span>
             </div>
-            <!-- Stories Container -->
-            <div id="storiesContainer" class="flex space-x-3">
-              <!-- Dynamically populated -->
-            </div>
+            <!-- Dynamic Stories -->
+            <div id="storiesContainer" class="flex space-x-3"></div>
           </div>
         </div>
 
-        <!-- Chats List -->
-        <div id="chatsList" class="flex-1 divide-y divide-transparent">
-          <!-- Dynamically populated -->
+        <!-- Chat List Directory -->
+        <div id="chatsList" class="flex-1 space-y-1 px-1">
+          <!-- Dynamically populated from Firebase / Local State -->
         </div>
       </section>
 
       <!-- ---------------- TAB 2: PEOPLE / FRIENDS ---------------- -->
       <section id="tab-people" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-4 pb-16">
-        <div class="flex items-center justify-between">
+        <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold">People</h2>
-          <button onclick="switchPeopleSubTab('active')" id="btnSubActive" class="text-xs bg-messenger-primary px-3 py-1.5 rounded-full font-semibold">Active (5)</button>
+          <button onclick="openModal('addFriendModal')" class="text-xs bg-msg-primary px-3 py-1.5 rounded-full font-semibold">+ Add Friend</button>
         </div>
 
-        <!-- Friend Requests Section -->
-        <div class="bg-messenger-card p-3 rounded-xl space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-semibold text-gray-300">Friend Requests</span>
-            <span id="reqCount" class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">1</span>
-          </div>
-          <div id="friendRequestsList" class="space-y-2">
-            <!-- Dynamically populated -->
-          </div>
+        <!-- Pending Friend Requests -->
+        <div class="bg-msg-card p-3 rounded-2xl border border-gray-800">
+          <h3 class="text-xs font-semibold text-msg-textMuted uppercase mb-2">Friend Requests</h3>
+          <div id="friendRequestsList" class="space-y-2"></div>
         </div>
 
-        <!-- Active Friends Directory -->
+        <!-- Active Friends List -->
         <div>
-          <h3 class="text-xs font-semibold text-messenger-textMuted uppercase tracking-wider mb-2">Online Friends</h3>
-          <div id="activeFriendsList" class="space-y-2">
-            <!-- Dynamically populated -->
-          </div>
+          <h3 class="text-xs font-semibold text-msg-textMuted uppercase mb-2">Active Friends</h3>
+          <div id="activeFriendsList" class="space-y-2"></div>
         </div>
       </section>
 
       <!-- ---------------- TAB 3: NOTIFICATIONS ---------------- -->
       <section id="tab-notifications" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-3 pb-16">
-        <h2 class="text-xl font-bold mb-2">Notifications</h2>
-        <div id="notificationsList" class="space-y-2">
-          <!-- Mock notifications -->
-          <div class="flex items-center space-x-3 bg-messenger-card p-3 rounded-xl">
-            <div class="w-10 h-10 rounded-full bg-messenger-primary/20 text-messenger-primary flex items-center justify-center">
-              <i class="fa-solid fa-heart"></i>
-            </div>
-            <div class="flex-1">
-              <p class="text-sm"><strong>Priti</strong> reacted ❤️ to your story.</p>
-              <span class="text-xs text-messenger-textMuted">2h ago</span>
-            </div>
+        <h2 class="text-xl font-bold">Notifications</h2>
+        <div class="bg-msg-card p-3 rounded-2xl flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <p class="text-sm font-medium">Friend request accepted</p>
+            <span class="text-xs text-msg-textMuted">You can now chat with your friends.</span>
           </div>
         </div>
       </section>
 
       <!-- ---------------- TAB 4: MENU / PROFILE ---------------- -->
       <section id="tab-menu" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-4 pb-16">
-        <!-- User Profile Info -->
-        <div class="flex items-center space-x-3 p-3 bg-messenger-card rounded-2xl">
-          <div class="relative">
-            <img id="myAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" class="w-16 h-16 rounded-full object-cover border border-gray-700">
-            <span class="w-4 h-4 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
+        <div class="flex items-center space-x-3 p-3 bg-msg-card rounded-2xl border border-gray-800">
+          <img id="myMenuAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" class="w-14 h-14 rounded-full object-cover">
+          <div>
+            <h2 id="myMenuName" class="text-lg font-bold">Current User</h2>
+            <p id="myMenuHandle" class="text-xs text-msg-textMuted">@handle</p>
           </div>
-          <div class="flex-1">
-            <h2 id="myName" class="text-lg font-bold">You</h2>
-            <p id="myHandle" class="text-xs text-messenger-textMuted">@user_me</p>
-          </div>
-          <button onclick="openModal('editProfileModal')" class="p-2 text-gray-400 hover:text-white">
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
         </div>
 
-        <!-- Preferences -->
-        <div class="space-y-1">
-          <div class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-moon text-indigo-400"></i>
-              <span class="text-sm font-medium">Active Status</span>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-            </label>
-          </div>
-
-          <div onclick="alert('Privacy Settings Saved!')" class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-lock text-green-400"></i>
-              <span class="text-sm font-medium">Privacy & Safety</span>
-            </div>
+        <div class="space-y-2">
+          <button onclick="openModal('editProfileModal')" class="w-full text-left p-3 bg-msg-card rounded-xl flex justify-between items-center text-sm">
+            <span><i class="fa-solid fa-user-gear mr-2 text-blue-400"></i> Edit Profile</span>
             <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
-          </div>
-
-          <div onclick="alert('Message Requests settings opened')" class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-comment-dots text-yellow-400"></i>
-              <span class="text-sm font-medium">Message Requests</span>
-            </div>
-            <span class="text-xs bg-gray-700 px-2 py-0.5 rounded-full">0</span>
-          </div>
+          </button>
+          <button onclick="switchAuthUser()" class="w-full text-left p-3 bg-msg-card rounded-xl flex justify-between items-center text-sm text-red-400">
+            <span><i class="fa-solid fa-right-from-bracket mr-2"></i> Switch User / Login</span>
+          </button>
         </div>
       </section>
 
-      <!-- ==================== CONVERSATION VIEW (CHAT SCREEN) ==================== -->
-      <div id="chat-screen" class="absolute inset-0 bg-messenger-bg z-30 flex flex-col transform translate-x-full transition-transform duration-300">
+      <!-- ==================== CHAT ROOM SCREEN (ACTIVE CONVERSATION) ==================== -->
+      <div id="chat-screen" class="absolute inset-0 bg-black z-30 flex flex-col transform translate-x-full transition-transform duration-300">
+        
         <!-- Chat Header -->
-        <div class="px-3 py-2.5 bg-messenger-bg border-b border-gray-800 flex items-center justify-between">
+        <div class="px-3 py-2 bg-black border-b border-gray-800 flex items-center justify-between z-10">
           <div class="flex items-center space-x-2">
-            <button onclick="closeChatScreen()" class="p-2 text-messenger-primary text-lg rounded-full hover:bg-gray-800">
+            <button onclick="closeChatScreen()" class="p-2 text-msg-primary text-xl rounded-full">
               <i class="fa-solid fa-arrow-left"></i>
             </button>
             <div class="relative cursor-pointer" onclick="openChatInfo()">
@@ -229,32 +204,32 @@
               <span id="chatHeaderStatusDot" class="w-3 h-3 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
             </div>
             <div class="cursor-pointer" onclick="openChatInfo()">
-              <h3 id="chatHeaderName" class="text-sm font-semibold leading-tight">User Name</h3>
-              <p id="chatHeaderStatusText" class="text-[11px] text-messenger-textMuted">Active now</p>
+              <h3 id="chatHeaderName" class="text-sm font-semibold leading-tight">Name</h3>
+              <p id="chatHeaderStatusText" class="text-[11px] text-msg-textMuted">Active now</p>
             </div>
           </div>
-          <!-- Action Buttons -->
-          <div class="flex items-center space-x-1.5">
-            <button onclick="startCall('audio')" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+          <!-- Call & Info Actions -->
+          <div class="flex items-center space-x-2">
+            <button onclick="triggerCall('audio')" class="p-2 text-msg-primary text-lg">
               <i class="fa-solid fa-phone"></i>
             </button>
-            <button onclick="startCall('video')" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+            <button onclick="triggerCall('video')" class="p-2 text-msg-primary text-lg">
               <i class="fa-solid fa-video"></i>
             </button>
-            <button onclick="openChatInfo()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+            <button onclick="openChatInfo()" class="p-2 text-msg-primary text-lg">
               <i class="fa-solid fa-circle-info"></i>
             </button>
           </div>
         </div>
 
-        <!-- Messages Stream Container -->
-        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-messenger-bg to-black">
-          <!-- Dynamically populated messages -->
+        <!-- Message Stream Area -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-2 chat-bg-pattern">
+          <!-- Messages dynamically populated -->
         </div>
 
         <!-- Typing Indicator Banner -->
-        <div id="typingIndicator" class="px-4 py-1 text-xs text-messenger-textMuted hidden flex items-center space-x-2">
-          <span id="typingName">Peer</span> is typing...
+        <div id="typingIndicator" class="px-4 py-1 text-xs text-msg-textMuted hidden flex items-center space-x-2 bg-black/50">
+          <span id="typingName">Friend</span> is typing...
           <div class="flex space-x-1">
             <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
             <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
@@ -263,262 +238,263 @@
         </div>
 
         <!-- Message Input Bar -->
-        <div class="p-2 bg-messenger-bg border-t border-gray-800 flex items-center space-x-2 relative">
-          <!-- Expanded Options Popover Menu -->
-          <div id="moreToolsMenu" class="hidden absolute bottom-14 left-2 bg-messenger-card border border-gray-700 rounded-xl p-2 shadow-2xl flex flex-col space-y-1 z-40 w-44">
-            <button onclick="sendQuickAttachment('location')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
-              <i class="fa-solid fa-location-dot text-red-400"></i>
-              <span>Location</span>
+        <div class="p-2 bg-black border-t border-gray-800 flex items-center space-x-2 relative">
+          
+          <!-- Popover Plus Quick Menu (as shown in Screenshot 3) -->
+          <div id="quickPopoverMenu" class="hidden absolute bottom-14 left-2 bg-msg-card border border-gray-800 rounded-2xl p-2 shadow-2xl flex flex-col space-y-1 z-40 w-44">
+            <button onclick="sendQuickAttachment('saved')" class="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-xl text-xs font-semibold">
+              <i class="fa-solid fa-bookmark text-cyan-400"></i>
+              <span>Saved</span>
             </button>
-            <button onclick="sendQuickAttachment('file')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
-              <i class="fa-solid fa-paperclip text-blue-400"></i>
+            <button onclick="sendQuickAttachment('files')" class="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-xl text-xs font-semibold">
+              <i class="fa-solid fa-paperclip text-teal-400"></i>
               <span>Files</span>
             </button>
-            <button onclick="sendQuickAttachment('game')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
-              <i class="fa-solid fa-gamepad text-emerald-400"></i>
+            <button onclick="sendQuickAttachment('games')" class="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-xl text-xs font-semibold">
+              <i class="fa-solid fa-gamepad text-cyan-400"></i>
               <span>Play games</span>
+            </button>
+            <button onclick="sendQuickAttachment('location')" class="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-xl text-xs font-semibold">
+              <i class="fa-solid fa-location-dot text-teal-400"></i>
+              <span>Location</span>
             </button>
           </div>
 
-          <button onclick="toggleMoreTools()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+          <button onclick="togglePopover()" class="p-2 text-msg-primary text-xl">
             <i class="fa-solid fa-circle-plus"></i>
           </button>
-          <button onclick="triggerImageUpload()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+          <button onclick="sendImagePrompt()" class="p-2 text-msg-primary text-lg">
+            <i class="fa-solid fa-camera"></i>
+          </button>
+          <button onclick="sendImagePrompt()" class="p-2 text-msg-primary text-lg">
             <i class="fa-solid fa-image"></i>
           </button>
-          <button id="voiceRecordBtn" onclick="toggleVoiceRecording()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+          <button id="voiceMicBtn" onclick="toggleVoiceRecording()" class="p-2 text-msg-primary text-lg">
             <i class="fa-solid fa-microphone"></i>
           </button>
 
-          <!-- Text Field -->
-          <div class="flex-1 bg-messenger-input rounded-full flex items-center px-3 py-1.5">
-            <input type="text" id="messageInput" onkeypress="handleKeyPress(event)" oninput="handleTyping()" placeholder="Message" class="bg-transparent border-none outline-none w-full text-sm text-white placeholder-gray-400">
-            <button onclick="toggleEmojiPicker()" class="text-gray-400 hover:text-yellow-400 px-1">
-              <i class="fa-regular fa-face-smile"></i>
+          <!-- Input Box -->
+          <div class="flex-1 bg-msg-input rounded-full flex items-center px-3 py-1.5">
+            <input type="text" id="messageInput" onkeypress="handleKeyPress(event)" oninput="handleTypingState()" placeholder="Message" class="bg-transparent border-none outline-none w-full text-sm text-white placeholder-gray-400">
+            <button onclick="addEmoji('😊')" class="text-gray-400 hover:text-yellow-400 px-1">
+              <i class="fa-regular fa-face-smile text-lg"></i>
             </button>
           </div>
 
-          <!-- Quick Reaction Send / Send Button -->
-          <button id="sendBtn" onclick="sendMessage()" class="p-2 text-messenger-primary text-xl hover:scale-110 transition">
-            <i class="fa-solid fa-heart text-red-500"></i>
+          <!-- Quick Heart Button or Send -->
+          <button id="sendBtn" onclick="sendMessage()" class="p-2 text-red-500 text-xl transition hover:scale-110">
+            <i class="fa-solid fa-heart"></i>
           </button>
         </div>
+
       </div>
 
-      <!-- ==================== CHAT INFO / PROFILE DETAILS SCREEN ==================== -->
-      <div id="chat-info-screen" class="absolute inset-0 bg-messenger-bg z-40 flex flex-col transform translate-x-full transition-transform duration-300 overflow-y-auto">
+      <!-- ==================== CHAT INFO / SETTINGS SCREEN ==================== -->
+      <div id="chat-info-screen" class="absolute inset-0 bg-black z-40 flex flex-col transform translate-x-full transition-transform duration-300 overflow-y-auto">
         <div class="p-3 border-b border-gray-800 flex items-center">
-          <button onclick="closeChatInfo()" class="p-2 text-white text-lg">
+          <button onclick="closeChatInfo()" class="p-2 text-white text-xl">
             <i class="fa-solid fa-arrow-left"></i>
           </button>
-          <h3 class="text-base font-semibold ml-2">Conversation Info</h3>
+          <h3 class="text-base font-semibold ml-2">Chat Info</h3>
         </div>
 
         <div class="p-6 flex flex-col items-center border-b border-gray-800">
           <img id="infoAvatar" src="" class="w-24 h-24 rounded-full object-cover mb-3">
-          <h2 id="infoName" class="text-xl font-bold">User Name</h2>
-          <p id="infoHandle" class="text-sm text-messenger-textMuted mb-4">@handle</p>
+          <h2 id="infoName" class="text-xl font-bold">Name</h2>
+          <p id="infoHandle" class="text-xs text-msg-textMuted mb-4">@handle</p>
 
-          <!-- Quick Actions Grid -->
+          <!-- Grid Menu (Profile, Nicknames, Search, Customize) -->
           <div class="grid grid-cols-4 gap-4 w-full text-center">
-            <div onclick="alert('Profile viewed')" class="flex flex-col items-center space-y-1 cursor-pointer">
-              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
-                <i class="fa-brands fa-facebook"></i>
+            <button onclick="alert('Viewing Facebook Profile')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-msg-input flex items-center justify-center text-white">
+                <i class="fa-brands fa-facebook-f"></i>
               </div>
-              <span class="text-xs text-gray-300">Profile</span>
-            </div>
-            <div onclick="openModal('nicknameModal')" class="flex flex-col items-center space-y-1 cursor-pointer">
-              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+              <span class="text-[11px] text-gray-300">Profile</span>
+            </button>
+            <button onclick="openModal('nicknameModal')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-msg-input flex items-center justify-center text-white">
                 <i class="fa-solid fa-font"></i>
               </div>
-              <span class="text-xs text-gray-300">Nicknames</span>
-            </div>
-            <div onclick="alert('Search in conversation')" class="flex flex-col items-center space-y-1 cursor-pointer">
-              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+              <span class="text-[11px] text-gray-300">Nicknames</span>
+            </button>
+            <button onclick="alert('Search in conversation')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-msg-input flex items-center justify-center text-white">
                 <i class="fa-solid fa-magnifying-glass"></i>
               </div>
-              <span class="text-xs text-gray-300">Search</span>
-            </div>
-            <div onclick="openModal('customizeThemeModal')" class="flex flex-col items-center space-y-1 cursor-pointer">
-              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+              <span class="text-[11px] text-gray-300">Search</span>
+            </button>
+            <button onclick="alert('Theme customization')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-msg-input flex items-center justify-center text-white">
                 <i class="fa-solid fa-palette"></i>
               </div>
-              <span class="text-xs text-gray-300">Theme</span>
+              <span class="text-[11px] text-gray-300">Customize</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Details Section List -->
+        <div class="p-4 space-y-4">
+          <div>
+            <h4 class="text-xs font-semibold text-msg-textMuted uppercase mb-2">Chat Info</h4>
+            <div class="space-y-2">
+              <div class="p-3 bg-msg-card rounded-xl flex items-center justify-between text-sm">
+                <span><i class="fa-solid fa-images mr-3 text-blue-400"></i> View media, files & links</span>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+              </div>
+              <div class="p-3 bg-msg-card rounded-xl flex items-center justify-between text-sm">
+                <span><i class="fa-solid fa-thumbtack mr-3 text-yellow-400"></i> Pinned messages</span>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-semibold text-msg-textMuted uppercase mb-2">Actions</h4>
+            <div class="space-y-2">
+              <div onclick="toggleMuteChat()" class="p-3 bg-msg-card rounded-xl flex items-center justify-between text-sm cursor-pointer">
+                <span><i class="fa-solid fa-bell-slash mr-3 text-white"></i> <span id="muteBtnLabel">Mute notifications</span></span>
+              </div>
+              <div class="p-3 bg-msg-card rounded-xl flex items-center justify-between text-sm">
+                <span><i class="fa-solid fa-lock mr-3 text-green-400"></i> End-to-end encryption</span>
+                <span class="text-xs text-gray-400">On</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-semibold text-msg-textMuted uppercase mb-2">Privacy & Support</h4>
+            <div class="space-y-2">
+              <div onclick="blockUser()" class="p-3 bg-msg-card rounded-xl flex items-center text-sm text-red-500 cursor-pointer">
+                <i class="fa-solid fa-ban mr-3"></i> Block user
+              </div>
+              <div onclick="deleteChat()" class="p-3 bg-msg-card rounded-xl flex items-center text-sm text-red-500 cursor-pointer">
+                <i class="fa-solid fa-trash mr-3"></i> Delete chat
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Options List -->
-        <div class="p-4 space-y-2">
-          <h4 class="text-xs font-bold text-messenger-textMuted uppercase mb-2">Actions</h4>
-
-          <div onclick="toggleMute()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-bell-slash text-yellow-500"></i>
-              <span id="muteLabel" class="text-sm">Mute notifications</span>
-            </div>
-            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
-          </div>
-
-          <div onclick="alert('Disappearing messages enabled')" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-clock text-blue-400"></i>
-              <span class="text-sm">Disappearing messages</span>
-            </div>
-            <span class="text-xs text-gray-400">Off</span>
-          </div>
-
-          <div onclick="restrictUser()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-user-shield text-amber-500"></i>
-              <span class="text-sm">Restrict</span>
-            </div>
-          </div>
-
-          <div onclick="blockUser()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-ban text-red-500"></i>
-              <span class="text-sm text-red-500">Block</span>
-            </div>
-          </div>
-
-          <div onclick="deleteChat()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <i class="fa-solid fa-trash text-red-500"></i>
-              <span class="text-sm text-red-500">Delete chat</span>
-            </div>
-          </div>
-        </div>
       </div>
 
     </div>
 
-    <!-- ==================== BOTTOM NAVBAR ==================== -->
-    <nav id="bottom-nav" class="h-14 bg-messenger-bg border-t border-gray-800 flex items-center justify-around z-20">
-      <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center text-messenger-primary space-y-0.5">
+    <!-- ==================== BOTTOM NAVIGATION BAR ==================== -->
+    <nav id="bottom-nav" class="h-14 bg-black border-t border-gray-800 flex items-center justify-around z-20">
+      <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center text-msg-primary space-y-0.5">
         <i class="fa-solid fa-comment text-lg"></i>
         <span class="text-[10px] font-medium">Chats</span>
       </button>
-      <button onclick="switchTab('people')" id="nav-people" class="flex flex-col items-center text-messenger-textMuted space-y-0.5">
+      <button onclick="switchTab('people')" id="nav-people" class="flex flex-col items-center text-msg-textMuted space-y-0.5">
         <i class="fa-solid fa-user-group text-lg"></i>
         <span class="text-[10px] font-medium">People</span>
       </button>
-      <button onclick="switchTab('notifications')" id="nav-notifications" class="flex flex-col items-center text-messenger-textMuted space-y-0.5 relative">
+      <button onclick="switchTab('notifications')" id="nav-notifications" class="flex flex-col items-center text-msg-textMuted space-y-0.5 relative">
         <i class="fa-solid fa-bell text-lg"></i>
         <span class="text-[10px] font-medium">Notifications</span>
-        <span class="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-3"></span>
       </button>
-      <button onclick="switchTab('menu')" id="nav-menu" class="flex flex-col items-center text-messenger-textMuted space-y-0.5">
+      <button onclick="switchTab('menu')" id="nav-menu" class="flex flex-col items-center text-msg-textMuted space-y-0.5">
         <i class="fa-solid fa-bars text-lg"></i>
         <span class="text-[10px] font-medium">Menu</span>
       </button>
     </nav>
 
-    <!-- ==================== AUDIO/VIDEO CALL OVERLAY MODAL ==================== -->
+    <!-- ==================== AUDIO / VIDEO CALL OVERLAY ==================== -->
     <div id="callModal" class="hidden absolute inset-0 bg-gray-950 z-50 flex flex-col justify-between p-6">
-      <!-- Call Top Header -->
       <div class="flex justify-between items-center text-white">
-        <i class="fa-solid fa-shield-halved text-green-400 text-sm"> End-to-end encrypted</i>
-        <button onclick="endCall()" class="p-2 text-gray-400 hover:text-white">
-          <i class="fa-solid fa-compress"></i>
-        </button>
+        <span class="text-xs text-green-400 font-semibold"><i class="fa-solid fa-lock"></i> Encrypted</span>
+        <button onclick="endCall()" class="p-2 text-gray-400"><i class="fa-solid fa-compress"></i></button>
       </div>
 
-      <!-- Peer Info Area -->
       <div class="flex flex-col items-center my-auto">
-        <div class="relative mb-4">
-          <img id="callAvatar" src="" class="w-28 h-28 rounded-full object-cover border-4 border-messenger-primary pulse-ring">
-        </div>
+        <img id="callAvatar" src="" class="w-28 h-28 rounded-full object-cover border-4 border-msg-primary pulse-animation mb-4">
         <h2 id="callPeerName" class="text-2xl font-bold text-white">Peer Name</h2>
-        <p id="callStatusText" class="text-sm text-messenger-primary animate-pulse mt-1">Calling...</p>
+        <p id="callTimer" class="text-sm text-msg-primary font-semibold mt-1">00:05</p>
       </div>
 
-      <!-- Video Feed Placeholder (Hidden during Audio) -->
-      <div id="videoFeedPlaceholder" class="hidden absolute inset-0 bg-gray-900 -z-10 flex items-center justify-center">
-        <div class="text-center text-gray-500">
-          <i class="fa-solid fa-video text-5xl mb-2"></i>
-          <p>Mock Video Stream Active</p>
-        </div>
-      </div>
-
-      <!-- Call Control Toolbar -->
-      <div class="bg-messenger-card/80 backdrop-blur-md p-4 rounded-3xl flex justify-around items-center">
-        <button onclick="toggleCallMute()" id="callMuteBtn" class="w-12 h-12 rounded-full bg-messenger-input flex items-center justify-center text-white text-lg">
+      <div class="bg-msg-card/90 backdrop-blur-md p-4 rounded-3xl flex justify-around items-center">
+        <button onclick="this.classList.toggle('bg-red-600')" class="w-12 h-12 rounded-full bg-msg-input flex items-center justify-center text-white">
           <i class="fa-solid fa-microphone"></i>
         </button>
         <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center text-white text-xl shadow-lg">
           <i class="fa-solid fa-phone-slash"></i>
         </button>
-        <button onclick="toggleVideoCamera()" id="callCamBtn" class="w-12 h-12 rounded-full bg-messenger-input flex items-center justify-center text-white text-lg">
+        <button onclick="this.classList.toggle('bg-red-600')" class="w-12 h-12 rounded-full bg-msg-input flex items-center justify-center text-white">
           <i class="fa-solid fa-video"></i>
         </button>
       </div>
     </div>
 
-    <!-- ==================== MODALS & POPUPS ==================== -->
-
-    <!-- Add Friend / Handle Search Modal -->
+    <!-- ==================== MODALS ==================== -->
+    <!-- Add Friend Modal -->
     <div id="addFriendModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
-        <h3 class="text-lg font-bold">Add Friend by Handle</h3>
-        <input type="text" id="addHandleInput" placeholder="@username" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+      <div class="bg-msg-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-base font-bold">Add Friend</h3>
+        <input type="text" id="addHandleInput" placeholder="Enter handle (e.g. priti_nj)" class="w-full bg-msg-input px-3 py-2 rounded-xl text-sm outline-none text-white">
         <div class="flex space-x-2">
-          <button onclick="closeModal('addFriendModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
-          <button onclick="sendFriendRequest()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Send Request</button>
+          <button onclick="closeModal('addFriendModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-xs font-semibold">Cancel</button>
+          <button onclick="sendFriendRequest()" class="flex-1 py-2 bg-msg-primary rounded-xl text-xs font-semibold">Send Request</button>
         </div>
       </div>
     </div>
 
     <!-- Edit Profile Modal -->
     <div id="editProfileModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
-        <h3 class="text-lg font-bold">Edit Profile</h3>
-        <input type="text" id="editNameInput" placeholder="Display Name" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
-        <input type="text" id="editAvatarInput" placeholder="Avatar Image URL" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+      <div class="bg-msg-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-base font-bold">Edit Profile</h3>
+        <input type="text" id="editNameInput" placeholder="Display Name" class="w-full bg-msg-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+        <input type="text" id="editAvatarInput" placeholder="Avatar URL" class="w-full bg-msg-input px-3 py-2 rounded-xl text-sm outline-none text-white">
         <div class="flex space-x-2">
-          <button onclick="closeModal('editProfileModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
-          <button onclick="saveProfile()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Save</button>
+          <button onclick="closeModal('editProfileModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-xs font-semibold">Cancel</button>
+          <button onclick="saveProfile()" class="flex-1 py-2 bg-msg-primary rounded-xl text-xs font-semibold">Save</button>
         </div>
       </div>
     </div>
 
-    <!-- Set Nickname Modal -->
+    <!-- Nickname Modal -->
     <div id="nicknameModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
-        <h3 class="text-lg font-bold">Set Nickname</h3>
-        <input type="text" id="nicknameInput" placeholder="Enter nickname..." class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+      <div class="bg-msg-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-base font-bold">Set Nickname</h3>
+        <input type="text" id="nicknameInput" placeholder="Enter nickname..." class="w-full bg-msg-input px-3 py-2 rounded-xl text-sm outline-none text-white">
         <div class="flex space-x-2">
-          <button onclick="closeModal('nicknameModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
-          <button onclick="saveNickname()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Set</button>
+          <button onclick="closeModal('nicknameModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-xs font-semibold">Cancel</button>
+          <button onclick="saveNickname()" class="flex-1 py-2 bg-msg-primary rounded-xl text-xs font-semibold">Set</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Story Viewer Modal -->
-    <div id="storyViewerModal" class="hidden absolute inset-0 bg-black z-50 flex flex-col justify-between p-4">
-      <div class="flex items-center justify-between text-white z-10">
-        <div class="flex items-center space-x-2">
-          <img id="storyViewerAvatar" src="" class="w-8 h-8 rounded-full">
-          <span id="storyViewerName" class="text-sm font-semibold"></span>
-        </div>
-        <button onclick="closeModal('storyViewerModal')" class="text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="my-auto flex justify-center">
-        <img id="storyViewerImg" src="" class="max-h-[70vh] rounded-xl object-contain">
-      </div>
-      <div class="flex justify-around items-center p-2 bg-messenger-card/50 rounded-full backdrop-blur-md">
-        <button onclick="reactStory('❤️')" class="text-2xl hover:scale-125 transition">❤️</button>
-        <button onclick="reactStory('🔥')" class="text-2xl hover:scale-125 transition">🔥</button>
-        <button onclick="reactStory('😂')" class="text-2xl hover:scale-125 transition">😂</button>
-        <button onclick="reactStory('😮')" class="text-2xl hover:scale-125 transition">😮</button>
       </div>
     </div>
 
   </div>
 
-  <!-- ==================== MAIN JAVASCRIPT LOGIC ==================== -->
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
   <script>
-    // App State Management (aligned with database schemas)
+    // -------------------------------------------------------------
+    // 1. FIREBASE CONFIGURATION (Replace with your Firebase credentials)
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    // Initialize Firebase if configured
+    let db = null;
+    let auth = null;
+    try {
+      if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        auth = firebase.auth();
+      }
+    } catch (e) {
+      console.log("Firebase not configured yet. Operating in local demo state.");
+    }
+
+    // -------------------------------------------------------------
+    // 2. STATE MANAGEMENT (Database Models Alignment)
+    // -------------------------------------------------------------
     const state = {
       currentUser: {
         uid: "user_me",
@@ -551,7 +527,7 @@
           online: true,
           lastSeen: "Active 5m ago",
           messages: [
-            { id: "m10", sender: "user_dewan", type: "text", text: "Bro code upload korso?", time: "6:30 PM" }
+            { id: "m10", sender: "user_dewan", type: "text", text: "Bro project real-time Database update hoise?", time: "6:30 PM" }
           ]
         },
         "user_riyaj": {
@@ -562,20 +538,23 @@
           online: false,
           lastSeen: "Active 2h ago",
           messages: [
-            { id: "m20", sender: "user_riyaj", type: "text", text: "Call me when free", time: "Yesterday" }
+            { id: "m20", sender: "user_riyaj", type: "text", text: "Missed call", time: "Yesterday" }
           ]
         }
       },
       stories: [
-        { id: "s1", uid: "user_dewan", name: "Dewan", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500" },
-        { id: "s2", uid: "user_piti", name: "Priti", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500" }
+        { id: "s1", name: "Jisan", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+        { id: "s2", name: "Dewan", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+        { id: "s3", name: "NL", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" }
       ],
       friendRequests: [
         { uid: "user_tanvir", name: "Tanvir Rahman", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150" }
       ]
     };
 
-    // Initialization
+    // -------------------------------------------------------------
+    // 3. UI RENDERERS & NAVIGATION
+    // -------------------------------------------------------------
     window.onload = function() {
       renderChatsList();
       renderStories();
@@ -583,63 +562,51 @@
       renderActiveFriends();
     };
 
-    // Navigation Switcher
     function switchTab(tab) {
-      const tabs = ['chats', 'people', 'notifications', 'menu'];
-      tabs.forEach(t => {
-        const el = document.getElementById(`tab-${t}`);
-        const nav = document.getElementById(`nav-${t}`);
-        if (t === tab) {
-          el.classList.remove('hidden');
-          nav.classList.add('text-messenger-primary');
-          nav.classList.remove('text-messenger-textMuted');
-        } else {
-          el.classList.add('hidden');
-          nav.classList.remove('text-messenger-primary');
-          nav.classList.add('text-messenger-textMuted');
-        }
+      ['chats', 'people', 'notifications', 'menu'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).classList.replace('text-msg-primary', 'text-msg-textMuted');
       });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).classList.replace('text-msg-textMuted', 'text-msg-primary');
     }
 
-    // Render Conversation List
     function renderChatsList() {
       const list = document.getElementById('chatsList');
       list.innerHTML = '';
       Object.values(state.chats).forEach(chat => {
-        const lastMsg = chat.messages[chat.messages.length - 1] || { text: 'No messages yet', time: '' };
+        const lastMsg = chat.messages[chat.messages.length - 1] || { text: 'No messages', time: '' };
         const item = document.createElement('div');
-        item.className = "flex items-center justify-between p-3.5 hover:bg-messenger-card rounded-2xl cursor-pointer transition";
+        item.className = "flex items-center justify-between p-3 hover:bg-msg-card rounded-2xl cursor-pointer transition";
         item.onclick = () => openChatScreen(chat.uid);
         item.innerHTML = `
           <div class="flex items-center space-x-3 overflow-hidden">
             <div class="relative flex-shrink-0">
-              <img src="${chat.avatar}" class="w-13 h-13 rounded-full object-cover w-[52px] h-[52px]">
+              <img src="${chat.avatar}" class="w-12 h-12 rounded-full object-cover">
               ${chat.online ? '<span class="w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>' : ''}
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold truncate text-white">${chat.name}</h3>
-              <p class="text-xs text-messenger-textMuted truncate mt-0.5">
+              <p class="text-xs text-msg-textMuted truncate mt-0.5">
                 ${lastMsg.sender === state.currentUser.uid ? 'You: ' : ''}${lastMsg.text}
               </p>
             </div>
           </div>
           <div class="flex flex-col items-end space-y-1 ml-2 flex-shrink-0">
-            <span class="text-[11px] text-messenger-textMuted">${lastMsg.time}</span>
-            <span class="w-2 h-2 bg-messenger-primary rounded-full"></span>
+            <span class="text-[10px] text-msg-textMuted">${lastMsg.time}</span>
+            <span class="w-2 h-2 bg-msg-primary rounded-full"></span>
           </div>
         `;
         list.appendChild(item);
       });
     }
 
-    // Render Stories Tray
     function renderStories() {
       const container = document.getElementById('storiesContainer');
       container.innerHTML = '';
       state.stories.forEach(s => {
         const item = document.createElement('div');
         item.className = "flex flex-col items-center space-y-1 cursor-pointer flex-shrink-0";
-        item.onclick = () => openStoryViewer(s);
         item.innerHTML = `
           <div class="w-14 h-14 rounded-full p-[2px] story-ring">
             <img src="${s.avatar}" class="w-full h-full rounded-full object-cover border-2 border-black">
@@ -650,20 +617,9 @@
       });
     }
 
-    // Open Story Viewer
-    function openStoryViewer(story) {
-      document.getElementById('storyViewerAvatar').src = story.avatar;
-      document.getElementById('storyViewerName').innerText = story.name;
-      document.getElementById('storyViewerImg').src = story.img;
-      openModal('storyViewerModal');
-    }
-
-    function reactStory(emoji) {
-      alert(`Reacted ${emoji} to story!`);
-      closeModal('storyViewerModal');
-    }
-
-    // Chat Screen Handlers
+    // -------------------------------------------------------------
+    // 4. CHAT ROOM ENGINE & MESSAGING
+    // -------------------------------------------------------------
     function openChatScreen(peerUid) {
       state.activeChatUid = peerUid;
       const peer = state.chats[peerUid];
@@ -680,36 +636,35 @@
       state.activeChatUid = null;
     }
 
-    // Render Message Stream
     function renderMessages() {
       if (!state.activeChatUid) return;
       const chat = state.chats[state.activeChatUid];
       const container = document.getElementById('messagesContainer');
-      container.innerHTML = `<div class="text-center text-[10px] text-messenger-textMuted my-2 uppercase font-semibold">OCT 20 AT 8:15 PM</div>`;
+      container.innerHTML = `<div class="text-center text-[10px] text-msg-textMuted my-3 uppercase tracking-wider font-semibold">OCT 20 AT 8:15 PM</div>`;
 
       chat.messages.forEach(msg => {
         const isSelf = msg.sender === state.currentUser.uid;
         const msgDiv = document.createElement('div');
-        msgDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'} items-end space-x-1.5`;
+        msgDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'} items-end space-x-2 my-1`;
 
-        let contentHtml = '';
+        let bodyHtml = '';
         if (msg.type === 'text') {
-          contentHtml = `<p class="text-sm leading-relaxed">${msg.text}</p>`;
+          bodyHtml = `<p class="text-sm font-normal">${msg.text}</p>`;
         } else if (msg.type === 'image') {
-          contentHtml = `<img src="${msg.url}" class="rounded-xl max-w-[200px] object-cover">`;
+          bodyHtml = `<img src="${msg.url}" class="rounded-xl max-w-[200px] object-cover">`;
         } else if (msg.type === 'voice') {
-          contentHtml = `
+          bodyHtml = `
             <div class="flex items-center space-x-2">
               <i class="fa-solid fa-play text-xs"></i>
-              <div class="h-1 w-24 bg-white/40 rounded-full"></div>
-              <span class="text-[10px]">0:12</span>
+              <div class="h-1 w-28 bg-white/40 rounded-full"></div>
+              <span class="text-[10px]">0:08</span>
             </div>`;
         }
 
         msgDiv.innerHTML = `
           ${!isSelf ? `<img src="${chat.avatar}" class="w-7 h-7 rounded-full object-cover mb-1">` : ''}
-          <div class="max-w-[75%] px-3.5 py-2 rounded-2xl ${isSelf ? 'bg-messenger-bubbleSelf text-white rounded-br-xs' : 'bg-messenger-bubblePeer text-gray-100 rounded-bl-xs'}">
-            ${contentHtml}
+          <div class="max-w-[75%] px-3.5 py-2 rounded-2xl ${isSelf ? 'bg-msg-bubbleSelf text-black font-medium rounded-br-xs' : 'bg-msg-bubblePeer text-white rounded-bl-xs'}">
+            ${bodyHtml}
           </div>
         `;
         container.appendChild(msgDiv);
@@ -717,17 +672,15 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // Message Input Controls
     function handleKeyPress(e) {
       if (e.key === 'Enter') sendMessage();
     }
 
-    function handleTyping() {
-      // Aligned with real-time database typing status trigger
+    function handleTypingState() {
       const val = document.getElementById('messageInput').value;
       const sendBtn = document.getElementById('sendBtn');
       if (val.trim().length > 0) {
-        sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-messenger-primary text-lg"></i>`;
+        sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-msg-primary text-xl"></i>`;
       } else {
         sendBtn.innerHTML = `<i class="fa-solid fa-heart text-red-500 text-xl"></i>`;
       }
@@ -742,42 +695,49 @@
       const newMsg = {
         id: "m_" + Date.now(),
         sender: state.currentUser.uid,
-        type: text.length > 0 ? 'text' : 'text',
+        type: 'text',
         text: text.length > 0 ? text : '❤️',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       chat.messages.push(newMsg);
+
+      // Save to Firebase Realtime DB if connected
+      if (db) {
+        db.ref(`chats/${state.currentUser.uid}/${state.activeChatUid}`).push(newMsg);
+      }
+
       input.value = '';
-      handleTyping();
+      handleTypingState();
       renderMessages();
       renderChatsList();
-
-      // Trigger automatic peer reply simulation
-      setTimeout(() => {
-        document.getElementById('typingIndicator').classList.remove('hidden');
-        document.getElementById('typingName').innerText = chat.name.split(' ')[0];
-        const container = document.getElementById('messagesContainer');
-        container.scrollTop = container.scrollHeight;
-      }, 1000);
-
-      setTimeout(() => {
-        document.getElementById('typingIndicator').classList.add('hidden');
-        chat.messages.push({
-          id: "m_reply_" + Date.now(),
-          sender: chat.uid,
-          type: 'text',
-          text: "Okay, got it!",
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        renderMessages();
-        renderChatsList();
-      }, 2800);
     }
 
-    // Voice Note & Attachments Simulator
+    function togglePopover() {
+      document.getElementById('quickPopoverMenu').classList.toggle('hidden');
+    }
+
+    function sendQuickAttachment(type) {
+      document.getElementById('quickPopoverMenu').classList.add('hidden');
+      if (!state.activeChatUid) return;
+      const labels = {
+        saved: "🔖 Saved item shared",
+        files: "📄 Document.pdf (2.4 MB)",
+        games: "🎮 Invited you to play 8 Ball Pool!",
+        location: "📍 Shared Live Location"
+      };
+      state.chats[state.activeChatUid].messages.push({
+        id: "m_att_" + Date.now(),
+        sender: state.currentUser.uid,
+        type: 'text',
+        text: labels[type],
+        time: 'Now'
+      });
+      renderMessages();
+    }
+
     function toggleVoiceRecording() {
-      const btn = document.getElementById('voiceRecordBtn');
+      const btn = document.getElementById('voiceMicBtn');
       btn.classList.toggle('text-red-500');
       if (btn.classList.contains('text-red-500')) {
         btn.classList.add('animate-pulse');
@@ -795,40 +755,28 @@
       }
     }
 
-    function toggleMoreTools() {
-      document.getElementById('moreToolsMenu').classList.toggle('hidden');
+    function sendImagePrompt() {
+      const url = prompt("Enter image URL:");
+      if (url && state.activeChatUid) {
+        state.chats[state.activeChatUid].messages.push({
+          id: "m_img_" + Date.now(),
+          sender: state.currentUser.uid,
+          type: 'image',
+          url: url,
+          time: 'Now'
+        });
+        renderMessages();
+      }
     }
 
-    function sendQuickAttachment(type) {
-      document.getElementById('moreToolsMenu').classList.add('hidden');
-      if (!state.activeChatUid) return;
-      let text = "Sent attachment";
-      if (type === 'location') text = "📍 Shared live location";
-      if (type === 'file') text = "📄 Document.pdf";
-      if (type === 'game') text = "🎮 Invited you to play Chess!";
-
-      state.chats[state.activeChatUid].messages.push({
-        id: "m_att_" + Date.now(),
-        sender: state.currentUser.uid,
-        type: 'text',
-        text: text,
-        time: 'Now'
-      });
-      renderMessages();
-    }
-
-    // Call Feature Handlers
-    function startCall(type) {
+    // -------------------------------------------------------------
+    // 5. CALL & CHAT INFO ENGINE
+    // -------------------------------------------------------------
+    function triggerCall(type) {
       if (!state.activeChatUid) return;
       const peer = state.chats[state.activeChatUid];
       document.getElementById('callAvatar').src = peer.avatar;
       document.getElementById('callPeerName').innerText = peer.name;
-      document.getElementById('callStatusText').innerText = type === 'video' ? 'Calling video...' : 'Calling audio...';
-
-      const videoPlaceholder = document.getElementById('videoFeedPlaceholder');
-      if (type === 'video') videoPlaceholder.classList.remove('hidden');
-      else videoPlaceholder.classList.add('hidden');
-
       document.getElementById('callModal').classList.remove('hidden');
     }
 
@@ -836,15 +784,6 @@
       document.getElementById('callModal').classList.add('hidden');
     }
 
-    function toggleCallMute() {
-      document.getElementById('callMuteBtn').classList.toggle('bg-red-600');
-    }
-
-    function toggleVideoCamera() {
-      document.getElementById('callCamBtn').classList.toggle('bg-red-600');
-    }
-
-    // Chat Info Side Screen
     function openChatInfo() {
       if (!state.activeChatUid) return;
       const peer = state.chats[state.activeChatUid];
@@ -858,20 +797,19 @@
       document.getElementById('chat-info-screen').classList.add('translate-x-full');
     }
 
-    function toggleMute() {
-      const lbl = document.getElementById('muteLabel');
-      lbl.innerText = lbl.innerText.includes('Unmute') ? 'Mute notifications' : 'Unmute notifications';
-      alert('Notification settings updated!');
+    function toggleMuteChat() {
+      const label = document.getElementById('muteBtnLabel');
+      label.innerText = label.innerText.includes('Unmute') ? 'Mute notifications' : 'Unmute notifications';
     }
 
     function blockUser() {
-      alert('User blocked successfully.');
+      alert("User blocked.");
       closeChatInfo();
       closeChatScreen();
     }
 
     function deleteChat() {
-      if (confirm('Delete this entire chat?')) {
+      if (confirm("Delete this conversation?")) {
         delete state.chats[state.activeChatUid];
         renderChatsList();
         closeChatInfo();
@@ -879,15 +817,18 @@
       }
     }
 
-    // Modals Controls
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
+    // -------------------------------------------------------------
+    // 6. MODALS & AUXILIARY HELPERS
+    // -------------------------------------------------------------
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function addEmoji(emoji) {
+      const input = document.getElementById('messageInput');
+      input.value += emoji;
+      handleTypingState();
     }
 
-    // Friends and Requests Management
     function renderFriendRequests() {
       const list = document.getElementById('friendRequestsList');
       list.innerHTML = '';
@@ -896,13 +837,10 @@
         item.className = "flex items-center justify-between";
         item.innerHTML = `
           <div class="flex items-center space-x-2">
-            <img src="${req.avatar}" class="w-10 h-10 rounded-full object-cover">
-            <span class="text-sm font-medium">${req.name}</span>
+            <img src="${req.avatar}" class="w-8 h-8 rounded-full object-cover">
+            <span class="text-xs font-medium">${req.name}</span>
           </div>
-          <div class="flex space-x-1.5">
-            <button onclick="acceptFriend('${req.uid}')" class="bg-messenger-primary text-xs px-3 py-1.5 rounded-lg font-semibold">Confirm</button>
-            <button onclick="this.parentElement.parentElement.remove()" class="bg-gray-800 text-xs px-3 py-1.5 rounded-lg font-semibold">Delete</button>
-          </div>
+          <button onclick="this.parentElement.remove()" class="bg-msg-primary text-xs px-2.5 py-1 rounded-lg">Confirm</button>
         `;
         list.appendChild(item);
       });
@@ -913,17 +851,16 @@
       list.innerHTML = '';
       Object.values(state.chats).filter(c => c.online).forEach(friend => {
         const item = document.createElement('div');
-        item.className = "flex items-center justify-between p-2 hover:bg-messenger-card rounded-xl cursor-pointer";
+        item.className = "flex items-center justify-between p-2 hover:bg-msg-card rounded-xl cursor-pointer";
         item.onclick = () => openChatScreen(friend.uid);
         item.innerHTML = `
           <div class="flex items-center space-x-3">
             <div class="relative">
-              <img src="${friend.avatar}" class="w-10 h-10 rounded-full object-cover">
-              <span class="w-3 h-3 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
+              <img src="${friend.avatar}" class="w-9 h-9 rounded-full object-cover">
+              <span class="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
             </div>
-            <span class="text-sm font-semibold">${friend.name}</span>
+            <span class="text-xs font-semibold">${friend.name}</span>
           </div>
-          <i class="fa-solid fa-wave-square text-messenger-primary text-xs"></i>
         `;
         list.appendChild(item);
       });
@@ -953,50 +890,36 @@
       const avatar = document.getElementById('editAvatarInput').value;
       if (name) {
         state.currentUser.name = name;
-        document.getElementById('myName').innerText = name;
+        document.getElementById('myMenuName').innerText = name;
       }
       if (avatar) {
         state.currentUser.avatar = avatar;
-        document.getElementById('myAvatar').src = avatar;
+        document.getElementById('myMenuAvatar').src = avatar;
       }
       closeModal('editProfileModal');
     }
 
-    function triggerStoryUpload() {
+    function addStoryPrompt() {
       const url = prompt("Enter story image URL:");
       if (url) {
-        state.stories.unshift({
-          id: "s_" + Date.now(),
-          uid: state.currentUser.uid,
-          name: "Your Story",
-          avatar: state.currentUser.avatar,
-          img: url
-        });
+        state.stories.unshift({ name: "Your Story", avatar: url });
         renderStories();
       }
     }
 
-    function triggerImageUpload() {
-      const url = prompt("Enter image URL to attach:");
-      if (url && state.activeChatUid) {
-        state.chats[state.activeChatUid].messages.push({
-          id: "m_img_" + Date.now(),
-          sender: state.currentUser.uid,
-          type: 'image',
-          url: url,
-          time: 'Now'
-        });
-        renderMessages();
-      }
+    function filterChats() {
+      const q = document.getElementById('chatSearchInput').value.toLowerCase();
+      Array.from(document.getElementById('chatsList').children).forEach(child => {
+        child.style.display = child.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+      });
     }
 
-    function filterChats() {
-      const query = document.getElementById('chatSearchInput').value.toLowerCase();
-      const list = document.getElementById('chatsList');
-      Array.from(list.children).forEach(child => {
-        const text = child.innerText.toLowerCase();
-        child.style.display = text.includes(query) ? 'flex' : 'none';
-      });
+    function switchAuthUser() {
+      const newUid = prompt("Enter User ID to simulate login:", "user_me");
+      if (newUid) {
+        state.currentUser.uid = newUid;
+        alert(`Switched active user session to ${newUid}`);
+      }
     }
   </script>
 </body>
