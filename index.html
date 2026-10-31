@@ -342,6 +342,137 @@ auth.onAuthStateChanged(async user=>{
 });
 window.addEventListener('load',refreshIcons);
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));}
+// APCHAT PROFILE PHOTO + IMAGE STORIES
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`
+    #apStories{display:flex;gap:13px;overflow-x:auto;padding:13px;border-bottom:1px solid #1f2937}
+    .apStory{flex:0 0 65px;text-align:center;font-size:11px;color:#d1d5db}
+    .apStory img{width:55px;height:55px;border-radius:50%;object-fit:cover;border:3px solid #8b5cf6;padding:2px}
+    #apStoryModal{position:fixed;inset:0;background:#000e;z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+    #apStoryModal img{max-width:100%;max-height:75vh;border-radius:14px}
+  `;
+  document.head.appendChild(style);
+
+  const originalShowApp=showApp;
+  showApp=function(){
+    originalShowApp();
+    initSocialFeatures();
+  };
+
+  function initSocialFeatures(){
+    if(!$('apStories')){
+      const bar=document.createElement('div');
+      bar.id='apStories';
+      $('sidebar').insertBefore(bar,$('sidebar').children[2]);
+    }
+    if(!$('apPhotoInput')){
+      const input=document.createElement('input');
+      input.id='apPhotoInput';input.type='file';input.accept='image/*';input.hidden=true;
+      input.onchange=()=>uploadPhoto(input.files[0]);
+      document.body.appendChild(input);
+    }
+    if(!$('apStoryInput')){
+      const input=document.createElement('input');
+      input.id='apStoryInput';input.type='file';input.accept='image/*';input.hidden=true;
+      input.onchange=()=>uploadStory(input.files[0]);
+      document.body.appendChild(input);
+    }
+    const header=$('sidebar').querySelector('header');
+    if(header&&!$('apMyPhoto')){
+      const btn=document.createElement('button');
+      btn.id='apMyPhoto';btn.className='flex items-center gap-2 text-xs text-blue-300';
+      btn.innerHTML='<img id="apMyAvatar" class="w-9 h-9 rounded-full object-cover" src="'+(currentUser.avatar||avatarFallback)+'"><span>My Profile</span>';
+      btn.onclick=()=>$('apPhotoInput').click();
+      header.appendChild(btn);
+    }
+    $('apMyAvatar').src=currentUser.avatar||avatarFallback;
+    loadStories();
+  }
+
+  function compressImage(file,max=700){
+    return new Promise((resolve,reject)=>{
+      if(!file||!file.type.startsWith('image/'))return reject(Error('একটি ছবি নির্বাচন করুন।'));
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>{
+          const scale=Math.min(1,max/Math.max(img.width,img.height));
+          const canvas=document.createElement('canvas');
+          canvas.width=Math.round(img.width*scale);
+          canvas.height=Math.round(img.height*scale);
+          canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+          resolve(canvas.toDataURL('image/jpeg',0.65));
+        };
+        img.onerror=reject;img.src=reader.result;
+      };
+      reader.onerror=reject;reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadPhoto(file){
+    try{
+      const data=await compressImage(file,500);
+      await db.ref('profiles/'+currentUser.uid+'/avatar').set(data);
+      currentUser.avatar=data;
+      $('apMyAvatar').src=data;
+      renderUI();
+      alert('Profile picture updated!');
+    }catch(e){alert('ছবি আপলোড হয়নি: '+e.message);}
+  }
+
+  async function uploadStory(file){
+    try{
+      const data=await compressImage(file,700);
+      const ref=db.ref('stories/'+currentUser.uid).push();
+      await ref.set({
+        image:data,
+        name:currentUser.name,
+        handle:currentUser.handle,
+        createdAt:Date.now(),
+        expiresAt:Date.now()+86400000
+      });
+      alert('Your story is posted!');
+      loadStories();
+    }catch(e){alert('Story পোস্ট হয়নি: '+e.message);}
+  }
+
+  async function loadStories(){
+    const bar=$('apStories');
+    if(!bar||!currentUser)return;
+    bar.innerHTML='<button class="apStory" onclick="$(\\'apStoryInput\\').click()"><span style="display:block;font-size:30px">＋</span>Add Story</button>';
+    try{
+      const snap=await db.ref('stories').once('value');
+      const data=snap.val()||{};
+      Object.entries(data).forEach(([uid,items])=>{
+        Object.entries(items||{}).forEach(([id,story])=>{
+          if(!story||!story.image||story.expiresAt<Date.now()){
+            db.ref('stories/'+uid+'/'+id).remove();
+            return;
+          }
+          const item=document.createElement('button');
+          item.className='apStory';
+          item.innerHTML='<img src="'+story.image+'"><span style="display:block;overflow:hidden;text-overflow:ellipsis">'+esc(story.name||'User')+'</span>';
+          item.onclick=()=>viewStory(story);
+          bar.appendChild(item);
+        });
+      });
+    }catch(e){console.error('Stories load error:',e);}
+  }
+
+  function viewStory(story){
+    let modal=$('apStoryModal');
+    if(!modal){
+      modal=document.createElement('div');
+      modal.id='apStoryModal';
+      modal.onclick=()=>modal.remove();
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML='<div style="text-align:center"><p style="margin-bottom:12px">'+esc(story.name||'User')+' · @'+esc(story.handle||'')+'</p><img src="'+story.image+'"><p style="font-size:12px;color:#aaa;margin-top:12px">Tap to close</p></div>';
+  }
+
+  window.addEventListener('focus',loadStories);
+})();
 </script>
 </body>
 </html>
