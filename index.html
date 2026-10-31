@@ -1,129 +1,1004 @@
+```html
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#080d18">
-<title>APCHAT — Aurora Messenger</title>
-<meta name="description" content="APCHAT — private chats, stories and groups.">
-<link rel="manifest" href="./manifest.json">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#030712;color:#f9fafb;font-family:Arial,sans-serif;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
-.hidden{display:none!important}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input,select,textarea{outline:none}
-.brand{background:linear-gradient(120deg,#2563eb,#7c3aed)}#authScreen,#app{height:100dvh;width:100%;overflow:hidden}
-#sidebar{width:100%;max-width:420px}@media(min-width:700px){#sidebar{width:350px}}
-#messagesContainer{overflow-y:auto;scroll-behavior:smooth;background-size:cover;background-position:center;background-attachment:local}.chat-menu{position:fixed;z-index:2500;background:#111827;border:1px solid #4b5563;border-radius:14px;padding:8px;box-shadow:0 12px 35px #0009;min-width:190px}.chat-menu button{display:block;width:100%;text-align:left;padding:10px;border-radius:8px;font-size:13px}.chat-menu button:active{background:#374151}.apStory{flex:0 0 66px;text-align:center;font-size:11px;color:#d1d5db;overflow:hidden}
-.apStory img{width:55px;height:55px;border-radius:50%;object-fit:cover;border:3px solid #8b5cf6;padding:2px}
-.bubble{max-width:86%;min-width:90px;padding:10px 12px;border-radius:18px;overflow-wrap:anywhere}.emoji-only{max-width:100%;min-width:0;padding:0;background:transparent!important;border:0;box-shadow:none}.emoji-only-content{font-family:Arial,sans-serif;line-height:1.25;white-space:pre-wrap;overflow-wrap:anywhere;text-shadow:0 1px 2px #0005}.mine{background:#2563eb;border-bottom-right-radius:5px}.theirs{background:#1f2937;border-bottom-left-radius:5px}
-.bubble img,.bubble video{max-width:100%;border-radius:10px;margin-top:5px}
-.bubble .media-thumb{display:block;width:96px;height:96px;max-width:96px;max-height:96px;object-fit:cover;border-radius:10px;margin-top:6px;cursor:pointer;background:#111827}
-.bubble .video-thumb-wrap{position:relative;width:96px;height:96px;margin-top:6px;cursor:pointer}
-.bubble .video-thumb-wrap video{display:block;width:96px;height:96px;max-width:96px;max-height:96px;object-fit:cover;margin:0;border-radius:10px;pointer-events:none}
-.bubble .video-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;text-shadow:0 2px 8px #000;pointer-events:none}
-#mediaViewer{position:fixed;inset:0;z-index:3000;background:#000;display:flex;align-items:center;justify-content:center;padding:12px}
-#mediaViewer.hidden{display:none!important}#mediaViewerContent{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
-#mediaViewerClose{position:absolute;top:env(safe-area-inset-top,10px);right:14px;z-index:2;width:42px;height:42px;border-radius:50%;background:#333c;color:white;font-size:28px;line-height:1}.privacy-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #374151;border-radius:12px;background:#111827}
-.privacy-choice:has(input:checked){border-color:#3b82f6;background:#172554}
-#storyModal{position:fixed;inset:0;background:#000e;z-index:1500;display:flex;align-items:center;justify-content:center;padding:14px;overflow-y:auto}
-#storyCard{width:100%;max-width:520px;max-height:95vh;overflow-y:auto;background:#111827;border:1px solid #374151;border-radius:18px;padding:14px}
-#storyMedia{max-width:100%;max-height:55vh;object-fit:contain;border-radius:12px;margin:auto}
-#callNotice{position:fixed;inset:0;background:#000b;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
-#apStories{display:flex;gap:12px;overflow-x:auto;padding:12px;border-bottom:1px solid #1f2937;min-height:94px}
-.reply-quote{display:flex;align-items:center;gap:8px;padding:7px 9px;margin:0 0 8px;border-left:3px solid #93c5fd;border-radius:7px;background:#0003;cursor:pointer;text-align:left;width:100%;min-width:0}.reply-quote img,.reply-quote video{width:42px;height:42px;flex:0 0 42px;object-fit:cover;border-radius:6px;margin:0}.reply-quote .reply-quote-text{font-size:11px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.message-meta{font-size:10px;opacity:.68;margin:3px 5px 0}.message-row{display:flex;flex-direction:column;max-width:100%;margin:4px 0}.message-row.mine-row{align-items:flex-end}.message-row.their-row{align-items:flex-start}.message-highlight{outline:2px solid #facc15;box-shadow:0 0 0 5px #facc1533;transition:box-shadow .2s}.msg-tools button{font-size:11px;color:#dbeafe;margin-left:7px}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#22c55e}
-
-.chat-topbar{min-height:60px}.chat-title-wrap{overflow:hidden;min-width:0}.chat-title-wrap #activeChatName{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;}.chat-title-wrap #activeChatBio{display:none!important}
-
-/* Message interaction improvements */
-.msg-tools{display:none!important}.message-meta{display:none}.message-meta.time-visible{display:block}.message-row.last-in-run .message-meta{display:block}.message-row .bubble,.message-row .emoji-only{touch-action:pan-y;user-select:none}.message-action-pop{position:fixed;z-index:4000;left:50%;transform:translateX(-50%);bottom:calc(82px + env(safe-area-inset-bottom));background:#111827;border:1px solid #475569;border-radius:18px;padding:10px;box-shadow:0 12px 35px #000b;max-width:calc(100vw - 24px)}.message-action-pop .quick-emojis{display:flex;gap:12px;justify-content:center;padding:4px 2px 10px}.message-action-pop button{padding:7px 10px;border-radius:9px;background:#263244;font-size:13px}.message-action-pop .quick-emojis button{font-size:25px;padding:2px;background:transparent}.group-chip{font-size:10px;color:#93c5fd;background:#1e3a8a66;border-radius:999px;padding:2px 7px}
-
-/* APCHAT Aurora redesign — original visual system, Messenger-inspired information placement */
-:root{--ap-bg:#080d18;--ap-panel:#101827;--ap-panel2:#151f30;--ap-line:#263348;--ap-text:#f4f7fb;--ap-muted:#93a4ba;--ap-cyan:#36d6d0;--ap-blue:#5687ff;--ap-violet:#8c70ff}
-html,body{background:var(--ap-bg)!important;color:var(--ap-text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-#app{background:radial-gradient(ellipse at 78% 0%,#18304b55,transparent 38%),var(--ap-bg)!important}
-#sidebar{width:100%;max-width:410px;background:linear-gradient(180deg,#111c2c 0%,#0d1522 100%)!important;border-right:1px solid var(--ap-line)!important}
-@media(min-width:700px){#sidebar{width:365px;max-width:365px}}
-#sidebar>header{padding:18px 18px 12px!important;border:0!important;background:transparent!important}
-#sidebar>header img{border-radius:14px!important;box-shadow:0 6px 18px #0005}
-#sidebar>header h1,#sidebar>header .text-xl{letter-spacing:-.04em}
-#sidebar .border-b,#sidebar .border-t{border-color:var(--ap-line)!important}
-#sidebar nav{padding:4px 12px!important;gap:7px!important}
-#sidebar nav button{border-radius:13px!important;padding:10px 13px!important;font-weight:650;transition:.18s}
-#sidebar nav button:hover,#sidebar nav button:focus-visible{background:#24354c!important}
-#apStories{min-height:112px;padding:14px 14px 12px!important;gap:15px!important;border-color:var(--ap-line)!important;scrollbar-width:none}
-#apStories::-webkit-scrollbar{display:none}
-.apStory{flex-basis:68px!important;color:#c4d0df!important;font-size:11px!important;font-weight:600}
-.apStory img{width:58px!important;height:58px!important;border:2px solid var(--ap-cyan)!important;padding:2px!important;background:#101827;box-shadow:0 0 0 3px #36d6d01a}
-#chatsView,#requestsView,#peopleView{padding:8px 12px 18px!important}
-#chatsView button,#friendRequestsList button,#messageRequestsList button,#sentRequestsList button,#peopleView button{border-radius:15px!important;border:1px solid transparent!important;padding:12px!important;transition:background .15s,border-color .15s}
-#chatsView button:hover,#friendRequestsList button:hover,#messageRequestsList button:hover,#sentRequestsList button:hover,#peopleView button:hover{background:#1b2a3d!important;border-color:#2b405c!important}
-#groupList button{border:1px solid var(--ap-line)!important;background:#131f30!important;border-radius:13px!important;padding:11px!important}
-#chatArea{background:#0b1220!important;min-width:0}
-#emptyChatState{background:radial-gradient(circle at 50% 42%,#1a4260 0%,#0c1728 42%,#0b1220 72%)!important}
-#emptyChatState>div{border-radius:28px!important;background:#15283b!important;border:1px solid #29435e!important;box-shadow:0 18px 50px #0005}
-#activeChatInterface{background:linear-gradient(180deg,#0d1726,#0a1220)!important;min-width:0}
-.chat-topbar{min-height:68px!important;padding:9px 14px!important;background:#111d2d!important;border-bottom:1px solid var(--ap-line)!important;box-shadow:0 5px 18px #0002;gap:10px!important}
-.chat-topbar button{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px!important;background:#1b2a3d!important;color:#dce8f6!important;flex-shrink:0}
-.chat-topbar button:hover{background:#29415d!important}
-#activeChatAvatar{width:42px!important;height:42px!important;border:2px solid #36d6d0!important;padding:1px}
-.chat-title-wrap #activeChatName{font-size:15px!important;font-weight:750;letter-spacing:-.02em;color:#f6f9ff}
-#activeChatBio{display:block!important;font-size:11px!important;color:#8ea4bd!important;line-height:1.25;margin-top:3px}
-#typingIndicator{background:#101d2d!important;color:#5ee7df!important;padding:8px 18px!important}
-#messagesContainer{padding:18px clamp(12px,3vw,34px) 22px!important;gap:9px!important;background-color:#0a1422!important;background-image:radial-gradient(circle at 12% 12%,#193a5030 0,transparent 30%),radial-gradient(circle at 88% 75%,#2a32602b 0,transparent 32%)!important;background-attachment:local!important}
-.message-row{margin:5px 0!important}
-.bubble{max-width:min(78%,520px)!important;padding:11px 15px!important;border-radius:19px!important;font-size:14px;line-height:1.45;box-shadow:0 3px 10px #0002}
-.bubble.mine{background:linear-gradient(135deg,#247fbd,#3675e8)!important;color:#fff!important;border-bottom-right-radius:6px!important}
-.bubble.theirs{background:#1a293b!important;color:#f0f5fc!important;border:1px solid #2a3b50!important;border-bottom-left-radius:6px!important}
-.reply-quote{background:#07111e66!important;border-left-color:#47ded6!important;color:#e2edf8!important}
-.message-meta{font-size:10px!important;color:#91a4ba!important;margin:3px 8px!important}
-.message-action-pop{background:#111e2e!important;border:1px solid #36506c!important;border-radius:18px!important}
-.message-action-pop button{background:#20334a!important;color:#f3f7fc!important}
-#activeChatInterface footer{padding:12px 14px calc(12px + env(safe-area-inset-bottom))!important;background:#101b2a!important;border-top:1px solid var(--ap-line)!important}
-#activeChatInterface footer>div:first-child{display:flex!important;align-items:center;gap:8px!important;margin:0 0 9px!important}
-#activeChatInterface footer>div:first-child button{width:36px;height:36px;border-radius:50%;background:#1b2b40!important;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
-#activeChatInterface footer>div:first-child button:hover{background:#2b435d!important}
-#activeChatInterface footer>div:last-child{align-items:flex-end!important;gap:8px!important}
-#messageInput{min-height:46px!important;max-height:120px!important;background:#1a293b!important;border:1px solid #2b4058!important;border-radius:24px!important;padding:12px 17px!important;color:#f7fbff!important;font-size:14px!important}
-#messageInput::placeholder{color:#8da1b8!important}
-#quickReactionBtn{width:43px!important;height:43px!important;flex:0 0 43px;border-radius:50%!important;background:#1c3045!important;border:1px solid #304861!important}
-#activeChatInterface footer>div:last-child>button:last-child{width:44px!important;height:44px!important;flex:0 0 44px;border-radius:50%!important;background:linear-gradient(135deg,var(--ap-cyan),#3b82f6)!important;color:#071321!important;font-size:18px}
-#replyPreview{background:#17273a!important;border-left:3px solid var(--ap-cyan)!important;border-radius:10px!important}
-#mediaViewer{background:#050a12f5!important}
-#storyModal{background:#030711eF!important;backdrop-filter:blur(12px)}
-#storyCard{background:#111d2d!important;border:1px solid #31445b!important;border-radius:24px!important}
-#userProfileModal>div,#privacyModal>div,#storyPrivacyModal>div{background:#111d2d!important;border:1px solid #30445c!important;border-radius:24px!important}
-#sidebar .brand,.brand{background:linear-gradient(120deg,#28c9c5,#477df5)!important;color:#06121e!important}
-input,textarea,select{color-scheme:dark}
-.chat-menu{background:#142236!important;border:1px solid #344b66!important;border-radius:16px!important;box-shadow:0 18px 45px #0009!important;padding:8px!important}
-.chat-menu button{padding:12px!important;border-radius:10px!important;color:#e6eff9!important}
-.chat-menu button:hover{background:#243b55!important}
-.ap-attach-menu{position:absolute;z-index:2800;bottom:76px;left:14px;width:min(260px,calc(100vw - 28px));padding:8px;background:#172438;border:1px solid #38516d;border-radius:18px;box-shadow:0 18px 45px #000b}
-.ap-attach-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:11px;text-align:left;color:#e8f2fc;font-size:14px}
-.ap-attach-menu button:hover{background:#263d58}
-.ap-attach-menu button[disabled]{opacity:.42;cursor:not-allowed}
-.ap-attach-menu .ap-attach-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:#243b56;color:#53ded6}
-.ap-chat-info{position:fixed;inset:0;z-index:2700;background:#080d18;overflow:auto;color:#f2f6fb;padding:0 0 calc(22px + env(safe-area-inset-bottom));}
-.ap-chat-info-head{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid #26364b;background:#101b2b;position:sticky;top:0;z-index:1}
-.ap-chat-info-head button{font-size:24px;width:38px;height:38px;border-radius:50%;background:#1c2d42}
-.ap-chat-info-profile{text-align:center;padding:26px 18px 20px}
-.ap-chat-info-profile img{width:104px;height:104px;object-fit:cover;border-radius:50%;margin:0 auto 14px;border:3px solid #39d5d0;padding:2px}
-.ap-chat-info-shortcuts{display:flex;justify-content:center;gap:12px;margin:18px auto 4px;max-width:420px}
-.ap-chat-info-shortcuts button{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:66px;color:#c5d3e3;font-size:11px}
-.ap-chat-info-shortcuts i{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#1c2d42;color:#4ce0d8;font-size:19px;font-style:normal}
-.ap-info-section{padding:12px 18px 4px}
-.ap-info-section h4{color:#8ea2bb;font-size:13px;font-weight:700;margin:8px 0 8px}
-.ap-info-row{display:flex;align-items:center;gap:15px;width:100%;padding:14px 3px;text-align:left;border-bottom:1px solid #1c2b3e;color:#e6edf6;font-size:14px}
-.ap-info-row .ap-info-icon{width:27px;text-align:center;color:#b7c9dc;font-size:19px}
-.ap-info-row small{display:block;color:#8195ad;font-size:11px;margin-top:3px}
-.ap-info-row.danger{color:#ff6477}
-@media(max-width:699px){#sidebar{max-width:none;width:100%}#chatArea{position:absolute;inset:0;width:100%;z-index:5}#chatArea.hidden{display:none!important}.chat-topbar{padding:8px 9px!important;gap:6px!important}.chat-topbar button{width:35px;height:35px}.bubble{max-width:86%!important}}
-
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Messenger Web</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            messenger: {
+              bg: '#050505',
+              card: '#121212',
+              input: '#242526',
+              border: '#2f3031',
+              primary: '#0084FF',
+              secondary: '#1877F2',
+              bubbleSelf: '#0084FF',
+              bubblePeer: '#242526',
+              accent: '#E4E6EB',
+              textMuted: '#B0B3B8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts (Inter) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #050505;
+      color: #E4E6EB;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3a3b3c;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .story-ring {
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    }
+    .pulse-ring {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 132, 255, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(0, 132, 255, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 132, 255, 0); }
+    }
+  </style>
 </head>
-<body>
-<section id="authScreen" class="flex items-center justify-center p-4 bg-gray-950">
- <div class="w-full max-w-md bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-2xl">
+<body class="h-screen w-screen overflow-hidden bg-black text-gray-100 flex justify-center items-center">
+
+  <!-- Mobile App Frame Container -->
+  <div class="w-full h-full max-w-md bg-messenger-bg flex flex-col relative overflow-hidden shadow-2xl border-x border-gray-900">
+
+    <!-- ==================== TOP NAVIGATION / STATUS BAR ==================== -->
+    <header id="top-header" class="px-4 pt-3 pb-2 flex items-center justify-between bg-messenger-bg z-20">
+      <div class="flex items-center space-x-3">
+        <h1 class="text-2xl font-bold tracking-tight text-white">Chats</h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="openModal('addFriendModal')" class="w-9 h-9 rounded-full bg-messenger-input flex items-center justify-center text-white hover:bg-gray-700 transition">
+          <i class="fa-solid fa-user-plus text-sm"></i>
+        </button>
+        <button onclick="openModal('newChatModal')" class="w-9 h-9 rounded-full bg-messenger-input flex items-center justify-center text-white hover:bg-gray-700 transition">
+          <i class="fa-solid fa-pen text-sm"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <div id="app-viewport" class="flex-1 relative overflow-hidden flex flex-col">
+
+      <!-- ---------------- TAB 1: CHATS LIST ---------------- -->
+      <section id="tab-chats" class="flex-1 overflow-y-auto flex flex-col space-y-3 pb-16">
+        <!-- Search Bar -->
+        <div class="px-4">
+          <div class="bg-messenger-input text-messenger-textMuted flex items-center px-3.5 py-2 rounded-full space-x-2.5">
+            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+            <input type="text" id="chatSearchInput" onkeyup="filterChats()" placeholder="Ask Meta AI or search" class="bg-transparent border-none outline-none w-full text-sm text-white placeholder-gray-400">
+            <i class="fa-solid fa-shapes text-gray-400 text-xs"></i>
+          </div>
+        </div>
+
+        <!-- Story Tray -->
+        <div class="px-4">
+          <div class="flex space-x-3 overflow-x-auto no-scrollbar py-1">
+            <!-- Add Story -->
+            <div onclick="triggerStoryUpload()" class="flex flex-col items-center space-y-1 cursor-pointer flex-shrink-0">
+              <div class="w-14 h-14 rounded-full bg-messenger-input flex items-center justify-center border-2 border-dashed border-gray-600 relative">
+                <i class="fa-solid fa-plus text-xl text-white"></i>
+              </div>
+              <span class="text-xs text-gray-400 max-w-[64px] truncate text-center">Your story</span>
+            </div>
+            <!-- Stories Container -->
+            <div id="storiesContainer" class="flex space-x-3">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Chats List -->
+        <div id="chatsList" class="flex-1 divide-y divide-transparent">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 2: PEOPLE / FRIENDS ---------------- -->
+      <section id="tab-people" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-4 pb-16">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">People</h2>
+          <button onclick="switchPeopleSubTab('active')" id="btnSubActive" class="text-xs bg-messenger-primary px-3 py-1.5 rounded-full font-semibold">Active (5)</button>
+        </div>
+
+        <!-- Friend Requests Section -->
+        <div class="bg-messenger-card p-3 rounded-xl space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-semibold text-gray-300">Friend Requests</span>
+            <span id="reqCount" class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">1</span>
+          </div>
+          <div id="friendRequestsList" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Active Friends Directory -->
+        <div>
+          <h3 class="text-xs font-semibold text-messenger-textMuted uppercase tracking-wider mb-2">Online Friends</h3>
+          <div id="activeFriendsList" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 3: NOTIFICATIONS ---------------- -->
+      <section id="tab-notifications" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-3 pb-16">
+        <h2 class="text-xl font-bold mb-2">Notifications</h2>
+        <div id="notificationsList" class="space-y-2">
+          <!-- Mock notifications -->
+          <div class="flex items-center space-x-3 bg-messenger-card p-3 rounded-xl">
+            <div class="w-10 h-10 rounded-full bg-messenger-primary/20 text-messenger-primary flex items-center justify-center">
+              <i class="fa-solid fa-heart"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm"><strong>Priti</strong> reacted ❤️ to your story.</p>
+              <span class="text-xs text-messenger-textMuted">2h ago</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 4: MENU / PROFILE ---------------- -->
+      <section id="tab-menu" class="flex-1 overflow-y-auto hidden px-4 py-2 space-y-4 pb-16">
+        <!-- User Profile Info -->
+        <div class="flex items-center space-x-3 p-3 bg-messenger-card rounded-2xl">
+          <div class="relative">
+            <img id="myAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" class="w-16 h-16 rounded-full object-cover border border-gray-700">
+            <span class="w-4 h-4 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
+          </div>
+          <div class="flex-1">
+            <h2 id="myName" class="text-lg font-bold">You</h2>
+            <p id="myHandle" class="text-xs text-messenger-textMuted">@user_me</p>
+          </div>
+          <button onclick="openModal('editProfileModal')" class="p-2 text-gray-400 hover:text-white">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </div>
+
+        <!-- Preferences -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-moon text-indigo-400"></i>
+              <span class="text-sm font-medium">Active Status</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+            </label>
+          </div>
+
+          <div onclick="alert('Privacy Settings Saved!')" class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-lock text-green-400"></i>
+              <span class="text-sm font-medium">Privacy & Safety</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+          </div>
+
+          <div onclick="alert('Message Requests settings opened')" class="flex items-center justify-between p-3.5 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-comment-dots text-yellow-400"></i>
+              <span class="text-sm font-medium">Message Requests</span>
+            </div>
+            <span class="text-xs bg-gray-700 px-2 py-0.5 rounded-full">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CONVERSATION VIEW (CHAT SCREEN) ==================== -->
+      <div id="chat-screen" class="absolute inset-0 bg-messenger-bg z-30 flex flex-col transform translate-x-full transition-transform duration-300">
+        <!-- Chat Header -->
+        <div class="px-3 py-2.5 bg-messenger-bg border-b border-gray-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <button onclick="closeChatScreen()" class="p-2 text-messenger-primary text-lg rounded-full hover:bg-gray-800">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="relative cursor-pointer" onclick="openChatInfo()">
+              <img id="chatHeaderAvatar" src="" class="w-9 h-9 rounded-full object-cover">
+              <span id="chatHeaderStatusDot" class="w-3 h-3 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
+            </div>
+            <div class="cursor-pointer" onclick="openChatInfo()">
+              <h3 id="chatHeaderName" class="text-sm font-semibold leading-tight">User Name</h3>
+              <p id="chatHeaderStatusText" class="text-[11px] text-messenger-textMuted">Active now</p>
+            </div>
+          </div>
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-1.5">
+            <button onclick="startCall('audio')" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+              <i class="fa-solid fa-phone"></i>
+            </button>
+            <button onclick="startCall('video')" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+              <i class="fa-solid fa-video"></i>
+            </button>
+            <button onclick="openChatInfo()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+              <i class="fa-solid fa-circle-info"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Stream Container -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-messenger-bg to-black">
+          <!-- Dynamically populated messages -->
+        </div>
+
+        <!-- Typing Indicator Banner -->
+        <div id="typingIndicator" class="px-4 py-1 text-xs text-messenger-textMuted hidden flex items-center space-x-2">
+          <span id="typingName">Peer</span> is typing...
+          <div class="flex space-x-1">
+            <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+            <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+            <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+          </div>
+        </div>
+
+        <!-- Message Input Bar -->
+        <div class="p-2 bg-messenger-bg border-t border-gray-800 flex items-center space-x-2 relative">
+          <!-- Expanded Options Popover Menu -->
+          <div id="moreToolsMenu" class="hidden absolute bottom-14 left-2 bg-messenger-card border border-gray-700 rounded-xl p-2 shadow-2xl flex flex-col space-y-1 z-40 w-44">
+            <button onclick="sendQuickAttachment('location')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
+              <i class="fa-solid fa-location-dot text-red-400"></i>
+              <span>Location</span>
+            </button>
+            <button onclick="sendQuickAttachment('file')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
+              <i class="fa-solid fa-paperclip text-blue-400"></i>
+              <span>Files</span>
+            </button>
+            <button onclick="sendQuickAttachment('game')" class="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg text-sm">
+              <i class="fa-solid fa-gamepad text-emerald-400"></i>
+              <span>Play games</span>
+            </button>
+          </div>
+
+          <button onclick="toggleMoreTools()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+            <i class="fa-solid fa-circle-plus"></i>
+          </button>
+          <button onclick="triggerImageUpload()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+            <i class="fa-solid fa-image"></i>
+          </button>
+          <button id="voiceRecordBtn" onclick="toggleVoiceRecording()" class="p-2 text-messenger-primary text-base hover:bg-gray-800 rounded-full">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+
+          <!-- Text Field -->
+          <div class="flex-1 bg-messenger-input rounded-full flex items-center px-3 py-1.5">
+            <input type="text" id="messageInput" onkeypress="handleKeyPress(event)" oninput="handleTyping()" placeholder="Message" class="bg-transparent border-none outline-none w-full text-sm text-white placeholder-gray-400">
+            <button onclick="toggleEmojiPicker()" class="text-gray-400 hover:text-yellow-400 px-1">
+              <i class="fa-regular fa-face-smile"></i>
+            </button>
+          </div>
+
+          <!-- Quick Reaction Send / Send Button -->
+          <button id="sendBtn" onclick="sendMessage()" class="p-2 text-messenger-primary text-xl hover:scale-110 transition">
+            <i class="fa-solid fa-heart text-red-500"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== CHAT INFO / PROFILE DETAILS SCREEN ==================== -->
+      <div id="chat-info-screen" class="absolute inset-0 bg-messenger-bg z-40 flex flex-col transform translate-x-full transition-transform duration-300 overflow-y-auto">
+        <div class="p-3 border-b border-gray-800 flex items-center">
+          <button onclick="closeChatInfo()" class="p-2 text-white text-lg">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <h3 class="text-base font-semibold ml-2">Conversation Info</h3>
+        </div>
+
+        <div class="p-6 flex flex-col items-center border-b border-gray-800">
+          <img id="infoAvatar" src="" class="w-24 h-24 rounded-full object-cover mb-3">
+          <h2 id="infoName" class="text-xl font-bold">User Name</h2>
+          <p id="infoHandle" class="text-sm text-messenger-textMuted mb-4">@handle</p>
+
+          <!-- Quick Actions Grid -->
+          <div class="grid grid-cols-4 gap-4 w-full text-center">
+            <div onclick="alert('Profile viewed')" class="flex flex-col items-center space-y-1 cursor-pointer">
+              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+                <i class="fa-brands fa-facebook"></i>
+              </div>
+              <span class="text-xs text-gray-300">Profile</span>
+            </div>
+            <div onclick="openModal('nicknameModal')" class="flex flex-col items-center space-y-1 cursor-pointer">
+              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+                <i class="fa-solid fa-font"></i>
+              </div>
+              <span class="text-xs text-gray-300">Nicknames</span>
+            </div>
+            <div onclick="alert('Search in conversation')" class="flex flex-col items-center space-y-1 cursor-pointer">
+              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
+              <span class="text-xs text-gray-300">Search</span>
+            </div>
+            <div onclick="openModal('customizeThemeModal')" class="flex flex-col items-center space-y-1 cursor-pointer">
+              <div class="w-10 h-10 rounded-full bg-messenger-input flex items-center justify-center">
+                <i class="fa-solid fa-palette"></i>
+              </div>
+              <span class="text-xs text-gray-300">Theme</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options List -->
+        <div class="p-4 space-y-2">
+          <h4 class="text-xs font-bold text-messenger-textMuted uppercase mb-2">Actions</h4>
+
+          <div onclick="toggleMute()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-bell-slash text-yellow-500"></i>
+              <span id="muteLabel" class="text-sm">Mute notifications</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+          </div>
+
+          <div onclick="alert('Disappearing messages enabled')" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-clock text-blue-400"></i>
+              <span class="text-sm">Disappearing messages</span>
+            </div>
+            <span class="text-xs text-gray-400">Off</span>
+          </div>
+
+          <div onclick="restrictUser()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-user-shield text-amber-500"></i>
+              <span class="text-sm">Restrict</span>
+            </div>
+          </div>
+
+          <div onclick="blockUser()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-ban text-red-500"></i>
+              <span class="text-sm text-red-500">Block</span>
+            </div>
+          </div>
+
+          <div onclick="deleteChat()" class="flex items-center justify-between p-3 bg-messenger-card rounded-xl cursor-pointer">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-trash text-red-500"></i>
+              <span class="text-sm text-red-500">Delete chat</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== BOTTOM NAVBAR ==================== -->
+    <nav id="bottom-nav" class="h-14 bg-messenger-bg border-t border-gray-800 flex items-center justify-around z-20">
+      <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center text-messenger-primary space-y-0.5">
+        <i class="fa-solid fa-comment text-lg"></i>
+        <span class="text-[10px] font-medium">Chats</span>
+      </button>
+      <button onclick="switchTab('people')" id="nav-people" class="flex flex-col items-center text-messenger-textMuted space-y-0.5">
+        <i class="fa-solid fa-user-group text-lg"></i>
+        <span class="text-[10px] font-medium">People</span>
+      </button>
+      <button onclick="switchTab('notifications')" id="nav-notifications" class="flex flex-col items-center text-messenger-textMuted space-y-0.5 relative">
+        <i class="fa-solid fa-bell text-lg"></i>
+        <span class="text-[10px] font-medium">Notifications</span>
+        <span class="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-3"></span>
+      </button>
+      <button onclick="switchTab('menu')" id="nav-menu" class="flex flex-col items-center text-messenger-textMuted space-y-0.5">
+        <i class="fa-solid fa-bars text-lg"></i>
+        <span class="text-[10px] font-medium">Menu</span>
+      </button>
+    </nav>
+
+    <!-- ==================== AUDIO/VIDEO CALL OVERLAY MODAL ==================== -->
+    <div id="callModal" class="hidden absolute inset-0 bg-gray-950 z-50 flex flex-col justify-between p-6">
+      <!-- Call Top Header -->
+      <div class="flex justify-between items-center text-white">
+        <i class="fa-solid fa-shield-halved text-green-400 text-sm"> End-to-end encrypted</i>
+        <button onclick="endCall()" class="p-2 text-gray-400 hover:text-white">
+          <i class="fa-solid fa-compress"></i>
+        </button>
+      </div>
+
+      <!-- Peer Info Area -->
+      <div class="flex flex-col items-center my-auto">
+        <div class="relative mb-4">
+          <img id="callAvatar" src="" class="w-28 h-28 rounded-full object-cover border-4 border-messenger-primary pulse-ring">
+        </div>
+        <h2 id="callPeerName" class="text-2xl font-bold text-white">Peer Name</h2>
+        <p id="callStatusText" class="text-sm text-messenger-primary animate-pulse mt-1">Calling...</p>
+      </div>
+
+      <!-- Video Feed Placeholder (Hidden during Audio) -->
+      <div id="videoFeedPlaceholder" class="hidden absolute inset-0 bg-gray-900 -z-10 flex items-center justify-center">
+        <div class="text-center text-gray-500">
+          <i class="fa-solid fa-video text-5xl mb-2"></i>
+          <p>Mock Video Stream Active</p>
+        </div>
+      </div>
+
+      <!-- Call Control Toolbar -->
+      <div class="bg-messenger-card/80 backdrop-blur-md p-4 rounded-3xl flex justify-around items-center">
+        <button onclick="toggleCallMute()" id="callMuteBtn" class="w-12 h-12 rounded-full bg-messenger-input flex items-center justify-center text-white text-lg">
+          <i class="fa-solid fa-microphone"></i>
+        </button>
+        <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center text-white text-xl shadow-lg">
+          <i class="fa-solid fa-phone-slash"></i>
+        </button>
+        <button onclick="toggleVideoCamera()" id="callCamBtn" class="w-12 h-12 rounded-full bg-messenger-input flex items-center justify-center text-white text-lg">
+          <i class="fa-solid fa-video"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== MODALS & POPUPS ==================== -->
+
+    <!-- Add Friend / Handle Search Modal -->
+    <div id="addFriendModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-lg font-bold">Add Friend by Handle</h3>
+        <input type="text" id="addHandleInput" placeholder="@username" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+        <div class="flex space-x-2">
+          <button onclick="closeModal('addFriendModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
+          <button onclick="sendFriendRequest()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Send Request</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-lg font-bold">Edit Profile</h3>
+        <input type="text" id="editNameInput" placeholder="Display Name" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+        <input type="text" id="editAvatarInput" placeholder="Avatar Image URL" class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+        <div class="flex space-x-2">
+          <button onclick="closeModal('editProfileModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
+          <button onclick="saveProfile()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Set Nickname Modal -->
+    <div id="nicknameModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-messenger-card w-full max-w-xs rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-lg font-bold">Set Nickname</h3>
+        <input type="text" id="nicknameInput" placeholder="Enter nickname..." class="w-full bg-messenger-input px-3 py-2 rounded-xl text-sm outline-none text-white">
+        <div class="flex space-x-2">
+          <button onclick="closeModal('nicknameModal')" class="flex-1 py-2 bg-gray-800 rounded-xl text-sm font-semibold">Cancel</button>
+          <button onclick="saveNickname()" class="flex-1 py-2 bg-messenger-primary rounded-xl text-sm font-semibold">Set</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Story Viewer Modal -->
+    <div id="storyViewerModal" class="hidden absolute inset-0 bg-black z-50 flex flex-col justify-between p-4">
+      <div class="flex items-center justify-between text-white z-10">
+        <div class="flex items-center space-x-2">
+          <img id="storyViewerAvatar" src="" class="w-8 h-8 rounded-full">
+          <span id="storyViewerName" class="text-sm font-semibold"></span>
+        </div>
+        <button onclick="closeModal('storyViewerModal')" class="text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="my-auto flex justify-center">
+        <img id="storyViewerImg" src="" class="max-h-[70vh] rounded-xl object-contain">
+      </div>
+      <div class="flex justify-around items-center p-2 bg-messenger-card/50 rounded-full backdrop-blur-md">
+        <button onclick="reactStory('❤️')" class="text-2xl hover:scale-125 transition">❤️</button>
+        <button onclick="reactStory('🔥')" class="text-2xl hover:scale-125 transition">🔥</button>
+        <button onclick="reactStory('😂')" class="text-2xl hover:scale-125 transition">😂</button>
+        <button onclick="reactStory('😮')" class="text-2xl hover:scale-125 transition">😮</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== MAIN JAVASCRIPT LOGIC ==================== -->
+  <script>
+    // App State Management (aligned with database schemas)
+    const state = {
+      currentUser: {
+        uid: "user_me",
+        name: "Jisan Ahmed",
+        handle: "jisan_dev",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+      },
+      activeChatUid: null,
+      chats: {
+        "user_piti": {
+          uid: "user_piti",
+          name: "Nusrat Jahan Priti 📌",
+          handle: "priti_nj",
+          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+          online: true,
+          lastSeen: "Active now",
+          messages: [
+            { id: "m1", sender: "user_piti", type: "text", text: "Amra bujhi deikhai amdr alada hye jaite hy na", time: "8:12 PM" },
+            { id: "m2", sender: "user_me", type: "text", text: "Na bujhle eto din e alada hye jaitam hoito", time: "8:14 PM" },
+            { id: "m3", sender: "user_piti", type: "text", text: "Jaan, Ma phn niye sober sathe kotha koiteche", time: "8:15 PM" },
+            { id: "m4", sender: "user_piti", type: "text", text: "Akn vaiyar sathe", time: "8:16 PM" },
+            { id: "m5", sender: "user_me", type: "text", text: "Ok", time: "8:17 PM" }
+          ]
+        },
+        "user_dewan": {
+          uid: "user_dewan",
+          name: "Dewan Hasan",
+          handle: "dewan_h",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+          online: true,
+          lastSeen: "Active 5m ago",
+          messages: [
+            { id: "m10", sender: "user_dewan", type: "text", text: "Bro code upload korso?", time: "6:30 PM" }
+          ]
+        },
+        "user_riyaj": {
+          uid: "user_riyaj",
+          name: "NL Riyaj",
+          handle: "nl_riyaj",
+          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+          online: false,
+          lastSeen: "Active 2h ago",
+          messages: [
+            { id: "m20", sender: "user_riyaj", type: "text", text: "Call me when free", time: "Yesterday" }
+          ]
+        }
+      },
+      stories: [
+        { id: "s1", uid: "user_dewan", name: "Dewan", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500" },
+        { id: "s2", uid: "user_piti", name: "Priti", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500" }
+      ],
+      friendRequests: [
+        { uid: "user_tanvir", name: "Tanvir Rahman", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150" }
+      ]
+    };
+
+    // Initialization
+    window.onload = function() {
+      renderChatsList();
+      renderStories();
+      renderFriendRequests();
+      renderActiveFriends();
+    };
+
+    // Navigation Switcher
+    function switchTab(tab) {
+      const tabs = ['chats', 'people', 'notifications', 'menu'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        const nav = document.getElementById(`nav-${t}`);
+        if (t === tab) {
+          el.classList.remove('hidden');
+          nav.classList.add('text-messenger-primary');
+          nav.classList.remove('text-messenger-textMuted');
+        } else {
+          el.classList.add('hidden');
+          nav.classList.remove('text-messenger-primary');
+          nav.classList.add('text-messenger-textMuted');
+        }
+      });
+    }
+
+    // Render Conversation List
+    function renderChatsList() {
+      const list = document.getElementById('chatsList');
+      list.innerHTML = '';
+      Object.values(state.chats).forEach(chat => {
+        const lastMsg = chat.messages[chat.messages.length - 1] || { text: 'No messages yet', time: '' };
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3.5 hover:bg-messenger-card rounded-2xl cursor-pointer transition";
+        item.onclick = () => openChatScreen(chat.uid);
+        item.innerHTML = `
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="relative flex-shrink-0">
+              <img src="${chat.avatar}" class="w-13 h-13 rounded-full object-cover w-[52px] h-[52px]">
+              ${chat.online ? '<span class="w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>' : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold truncate text-white">${chat.name}</h3>
+              <p class="text-xs text-messenger-textMuted truncate mt-0.5">
+                ${lastMsg.sender === state.currentUser.uid ? 'You: ' : ''}${lastMsg.text}
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-col items-end space-y-1 ml-2 flex-shrink-0">
+            <span class="text-[11px] text-messenger-textMuted">${lastMsg.time}</span>
+            <span class="w-2 h-2 bg-messenger-primary rounded-full"></span>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // Render Stories Tray
+    function renderStories() {
+      const container = document.getElementById('storiesContainer');
+      container.innerHTML = '';
+      state.stories.forEach(s => {
+        const item = document.createElement('div');
+        item.className = "flex flex-col items-center space-y-1 cursor-pointer flex-shrink-0";
+        item.onclick = () => openStoryViewer(s);
+        item.innerHTML = `
+          <div class="w-14 h-14 rounded-full p-[2px] story-ring">
+            <img src="${s.avatar}" class="w-full h-full rounded-full object-cover border-2 border-black">
+          </div>
+          <span class="text-xs text-gray-300 max-w-[64px] truncate text-center">${s.name}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Open Story Viewer
+    function openStoryViewer(story) {
+      document.getElementById('storyViewerAvatar').src = story.avatar;
+      document.getElementById('storyViewerName').innerText = story.name;
+      document.getElementById('storyViewerImg').src = story.img;
+      openModal('storyViewerModal');
+    }
+
+    function reactStory(emoji) {
+      alert(`Reacted ${emoji} to story!`);
+      closeModal('storyViewerModal');
+    }
+
+    // Chat Screen Handlers
+    function openChatScreen(peerUid) {
+      state.activeChatUid = peerUid;
+      const peer = state.chats[peerUid];
+      document.getElementById('chatHeaderAvatar').src = peer.avatar;
+      document.getElementById('chatHeaderName').innerText = peer.name;
+      document.getElementById('chatHeaderStatusText').innerText = peer.online ? 'Active now' : peer.lastSeen;
+
+      renderMessages();
+      document.getElementById('chat-screen').classList.remove('translate-x-full');
+    }
+
+    function closeChatScreen() {
+      document.getElementById('chat-screen').classList.add('translate-x-full');
+      state.activeChatUid = null;
+    }
+
+    // Render Message Stream
+    function renderMessages() {
+      if (!state.activeChatUid) return;
+      const chat = state.chats[state.activeChatUid];
+      const container = document.getElementById('messagesContainer');
+      container.innerHTML = `<div class="text-center text-[10px] text-messenger-textMuted my-2 uppercase font-semibold">OCT 20 AT 8:15 PM</div>`;
+
+      chat.messages.forEach(msg => {
+        const isSelf = msg.sender === state.currentUser.uid;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'} items-end space-x-1.5`;
+
+        let contentHtml = '';
+        if (msg.type === 'text') {
+          contentHtml = `<p class="text-sm leading-relaxed">${msg.text}</p>`;
+        } else if (msg.type === 'image') {
+          contentHtml = `<img src="${msg.url}" class="rounded-xl max-w-[200px] object-cover">`;
+        } else if (msg.type === 'voice') {
+          contentHtml = `
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-play text-xs"></i>
+              <div class="h-1 w-24 bg-white/40 rounded-full"></div>
+              <span class="text-[10px]">0:12</span>
+            </div>`;
+        }
+
+        msgDiv.innerHTML = `
+          ${!isSelf ? `<img src="${chat.avatar}" class="w-7 h-7 rounded-full object-cover mb-1">` : ''}
+          <div class="max-w-[75%] px-3.5 py-2 rounded-2xl ${isSelf ? 'bg-messenger-bubbleSelf text-white rounded-br-xs' : 'bg-messenger-bubblePeer text-gray-100 rounded-bl-xs'}">
+            ${contentHtml}
+          </div>
+        `;
+        container.appendChild(msgDiv);
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Message Input Controls
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    function handleTyping() {
+      // Aligned with real-time database typing status trigger
+      const val = document.getElementById('messageInput').value;
+      const sendBtn = document.getElementById('sendBtn');
+      if (val.trim().length > 0) {
+        sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-messenger-primary text-lg"></i>`;
+      } else {
+        sendBtn.innerHTML = `<i class="fa-solid fa-heart text-red-500 text-xl"></i>`;
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!state.activeChatUid) return;
+
+      const chat = state.chats[state.activeChatUid];
+      const newMsg = {
+        id: "m_" + Date.now(),
+        sender: state.currentUser.uid,
+        type: text.length > 0 ? 'text' : 'text',
+        text: text.length > 0 ? text : '❤️',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      chat.messages.push(newMsg);
+      input.value = '';
+      handleTyping();
+      renderMessages();
+      renderChatsList();
+
+      // Trigger automatic peer reply simulation
+      setTimeout(() => {
+        document.getElementById('typingIndicator').classList.remove('hidden');
+        document.getElementById('typingName').innerText = chat.name.split(' ')[0];
+        const container = document.getElementById('messagesContainer');
+        container.scrollTop = container.scrollHeight;
+      }, 1000);
+
+      setTimeout(() => {
+        document.getElementById('typingIndicator').classList.add('hidden');
+        chat.messages.push({
+          id: "m_reply_" + Date.now(),
+          sender: chat.uid,
+          type: 'text',
+          text: "Okay, got it!",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        renderMessages();
+        renderChatsList();
+      }, 2800);
+    }
+
+    // Voice Note & Attachments Simulator
+    function toggleVoiceRecording() {
+      const btn = document.getElementById('voiceRecordBtn');
+      btn.classList.toggle('text-red-500');
+      if (btn.classList.contains('text-red-500')) {
+        btn.classList.add('animate-pulse');
+      } else {
+        btn.classList.remove('animate-pulse');
+        if (state.activeChatUid) {
+          state.chats[state.activeChatUid].messages.push({
+            id: "m_voice_" + Date.now(),
+            sender: state.currentUser.uid,
+            type: 'voice',
+            time: 'Now'
+          });
+          renderMessages();
+        }
+      }
+    }
+
+    function toggleMoreTools() {
+      document.getElementById('moreToolsMenu').classList.toggle('hidden');
+    }
+
+    function sendQuickAttachment(type) {
+      document.getElementById('moreToolsMenu').classList.add('hidden');
+      if (!state.activeChatUid) return;
+      let text = "Sent attachment";
+      if (type === 'location') text = "📍 Shared live location";
+      if (type === 'file') text = "📄 Document.pdf";
+      if (type === 'game') text = "🎮 Invited you to play Chess!";
+
+      state.chats[state.activeChatUid].messages.push({
+        id: "m_att_" + Date.now(),
+        sender: state.currentUser.uid,
+        type: 'text',
+        text: text,
+        time: 'Now'
+      });
+      renderMessages();
+    }
+
+    // Call Feature Handlers
+    function startCall(type) {
+      if (!state.activeChatUid) return;
+      const peer = state.chats[state.activeChatUid];
+      document.getElementById('callAvatar').src = peer.avatar;
+      document.getElementById('callPeerName').innerText = peer.name;
+      document.getElementById('callStatusText').innerText = type === 'video' ? 'Calling video...' : 'Calling audio...';
+
+      const videoPlaceholder = document.getElementById('videoFeedPlaceholder');
+      if (type === 'video') videoPlaceholder.classList.remove('hidden');
+      else videoPlaceholder.classList.add('hidden');
+
+      document.getElementById('callModal').classList.remove('hidden');
+    }
+
+    function endCall() {
+      document.getElementById('callModal').classList.add('hidden');
+    }
+
+    function toggleCallMute() {
+      document.getElementById('callMuteBtn').classList.toggle('bg-red-600');
+    }
+
+    function toggleVideoCamera() {
+      document.getElementById('callCamBtn').classList.toggle('bg-red-600');
+    }
+
+    // Chat Info Side Screen
+    function openChatInfo() {
+      if (!state.activeChatUid) return;
+      const peer = state.chats[state.activeChatUid];
+      document.getElementById('infoAvatar').src = peer.avatar;
+      document.getElementById('infoName').innerText = peer.name;
+      document.getElementById('infoHandle').innerText = `@${peer.handle}`;
+      document.getElementById('chat-info-screen').classList.remove('translate-x-full');
+    }
+
+    function closeChatInfo() {
+      document.getElementById('chat-info-screen').classList.add('translate-x-full');
+    }
+
+    function toggleMute() {
+      const lbl = document.getElementById('muteLabel');
+      lbl.innerText = lbl.innerText.includes('Unmute') ? 'Mute notifications' : 'Unmute notifications';
+      alert('Notification settings updated!');
+    }
+
+    function blockUser() {
+      alert('User blocked successfully.');
+      closeChatInfo();
+      closeChatScreen();
+    }
+
+    function deleteChat() {
+      if (confirm('Delete this entire chat?')) {
+        delete state.chats[state.activeChatUid];
+        renderChatsList();
+        closeChatInfo();
+        closeChatScreen();
+      }
+    }
+
+    // Modals Controls
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // Friends and Requests Management
+    function renderFriendRequests() {
+      const list = document.getElementById('friendRequestsList');
+      list.innerHTML = '';
+      state.friendRequests.forEach(req => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between";
+        item.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <img src="${req.avatar}" class="w-10 h-10 rounded-full object-cover">
+            <span class="text-sm font-medium">${req.name}</span>
+          </div>
+          <div class="flex space-x-1.5">
+            <button onclick="acceptFriend('${req.uid}')" class="bg-messenger-primary text-xs px-3 py-1.5 rounded-lg font-semibold">Confirm</button>
+            <button onclick="this.parentElement.parentElement.remove()" class="bg-gray-800 text-xs px-3 py-1.5 rounded-lg font-semibold">Delete</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function renderActiveFriends() {
+      const list = document.getElementById('activeFriendsList');
+      list.innerHTML = '';
+      Object.values(state.chats).filter(c => c.online).forEach(friend => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-2 hover:bg-messenger-card rounded-xl cursor-pointer";
+        item.onclick = () => openChatScreen(friend.uid);
+        item.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <div class="relative">
+              <img src="${friend.avatar}" class="w-10 h-10 rounded-full object-cover">
+              <span class="w-3 h-3 bg-green-500 rounded-full border-2 border-black absolute bottom-0 right-0"></span>
+            </div>
+            <span class="text-sm font-semibold">${friend.name}</span>
+          </div>
+          <i class="fa-solid fa-wave-square text-messenger-primary text-xs"></i>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function sendFriendRequest() {
+      const handle = document.getElementById('addHandleInput').value;
+      if (handle) {
+        alert(`Friend request sent to ${handle}`);
+        closeModal('addFriendModal');
+      }
+    }
+
+    function saveNickname() {
+      const name = document.getElementById('nicknameInput').value;
+      if (name && state.activeChatUid) {
+        state.chats[state.activeChatUid].name = name;
+        document.getElementById('chatHeaderName').innerText = name;
+        document.getElementById('infoName').innerText = name;
+        renderChatsList();
+        closeModal('nicknameModal');
+      }
+    }
+
+    function saveProfile() {
+      const name = document.getElementById('editNameInput').value;
+      const avatar = document.getElementById('editAvatarInput').value;
+      if (name) {
+        state.currentUser.name = name;
+        document.getElementById('myName').innerText = name;
+      }
+      if (avatar) {
+        state.currentUser.avatar = avatar;
+        document.getElementById('myAvatar').src = avatar;
+      }
+      closeModal('editProfileModal');
+    }
+
+    function triggerStoryUpload() {
+      const url = prompt("Enter story image URL:");
+      if (url) {
+        state.stories.unshift({
+          id: "s_" + Date.now(),
+          uid: state.currentUser.uid,
+          name: "Your Story",
+          avatar: state.currentUser.avatar,
+          img: url
+        });
+        renderStories();
+      }
+    }
+
+    function triggerImageUpload() {
+      const url = prompt("Enter image URL to attach:");
+      if (url && state.activeChatUid) {
+        state.chats[state.activeChatUid].messages.push({
+          id: "m_img_" + Date.now(),
+          sender: state.currentUser.uid,
+          type: 'image',
+          url: url,
+          time: 'Now'
+        });
+        renderMessages();
+      }
+    }
+
+    function filterChats() {
+      const query = document.getElementById('chatSearchInput').value.toLowerCase();
+      const list = document.getElementById('chatsList');
+      Array.from(list.children).forEach(child => {
+        const text = child.innerText.toLowerCase();
+        child.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>
+```
