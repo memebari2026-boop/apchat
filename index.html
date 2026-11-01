@@ -78,7 +78,7 @@
 <div id="storyModal" class="hidden" onclick="if(event.target===this)closeStory()"><div id="storyCard"><div class="flex justify-between items-center mb-3"><div><b id="storyOwnerName"></b><p id="storyOwnerHandle" class="text-xs text-gray-400"></p></div><button onclick="closeStory()" class="text-2xl text-gray-400">×</button></div><div id="storyMediaWrap" class="text-center"></div><div id="storyMusicWrap" class="mt-2"></div><div id="storyReactionArea" class="mt-4 border-t border-gray-700 pt-3"><p class="text-sm font-bold mb-2">React to this story</p><div class="flex flex-wrap gap-3 text-2xl" id="storyEmojiButtons"></div></div><div id="storyOwnerReactionPanel" class="hidden mt-4 border-t border-gray-700 pt-3"><div class="flex justify-between items-center gap-2"><b class="text-sm">Story viewers & reactions</b><span id="storyReactionTotal" class="text-xs text-blue-300"></span></div><div id="storyReactionSummary" class="flex flex-wrap gap-2 my-3"></div><div id="storyReactionPeople" class="space-y-2"></div></div></div></div>
 <input id="fileInput" type="file" hidden onchange="sendGenericFile(this.files[0])"><input id="themeInput" type="file" accept="image/*" hidden onchange="uploadChatTheme(this.files[0])"><input id="photoInput" type="file" accept="image/*" hidden onchange="uploadPhoto(this.files[0])"><input id="storyInput" type="file" accept="image/*,video/*" hidden onchange="uploadStory(this.files[0])"><input id="imageInput" type="file" accept="image/*" hidden onchange="sendMedia(this.files[0],'image')"><input id="videoInput" type="file" accept="video/*" hidden onchange="sendMedia(this.files[0],'video')">
 <script>
-/* APCHAT FULLY OVERRIDDEN EMERGENCY FIX */
+/* APCHAT RESTORED MASTER SCRIPT (ALL FEATURES & DISCOVER SYNCED) */
 const firebaseConfig={apiKey:"AIzaSyD7ZgOGN87vLRu0-BKaAm5e5c8CKbFWiYs",authDomain:"apchat-app.firebaseapp.com",databaseURL:"https://apchat-app-default-rtdb.firebaseio.com",projectId:"apchat-app",storageBucket:"apchat-app.firebasestorage.app",messagingSenderId:"1089476474245",appId:"1:1089476474245:web:ac8fc99012b09ad58540ec",measurementId:"G-5H1JWCGWN8"};
 let auth,db;
 try{
@@ -134,10 +134,14 @@ async function handleRegister(){
   status('');
  }catch(e){
   console.error("Register Error:", e);
+  if(e.code==='auth/email-already-in-use'){
+    status('এই ফোন নম্বরে ইতিমধ্যে অ্যাকাউন্ট আছে। অনুগ্রহ করে Login করুন অথবা ফায়ারবেজ অথ থেকে ইউজার ডিলিট করুন।');
+  } else {
+    status(authError(e));
+  }
   if(cred?.user)await cred.user.delete().catch(()=>{});
   currentUser=null;
   showAuth();
-  status(authError(e));
  }finally{
   $('registerBtn').disabled=false;
  }
@@ -152,9 +156,16 @@ async function handleLogin(){
     const credential=await auth.signInWithEmailAndPassword(phoneEmail(phone), password);
     const user=credential.user;
     const profileSnap=await db.ref('profiles/'+user.uid).once('value');
-    if(!profileSnap.exists()){await auth.signOut(); status('Profile পাওয়া যায়নি।'); return;}
-    currentUser=profileSnap.val();
-    currentUser.uid=currentUser.uid||user.uid;
+    if(!profileSnap.exists()){
+      // যদি প্রোফাইল ডিলিট হয়ে গিয়ে থাকে কিন্তু অথ থাকে, তবে অটো প্রোফাইল বানিয়ে অ্যাপে ঢুকিয়ে দেবো
+      const defaultProfile={uid:user.uid,name:'User',handle:'user_'+user.uid.slice(0,6),privacy:'public',avatar:'',bio:'Using APCHAT',createdAt:Date.now()};
+      await db.ref('profiles/'+user.uid).set(defaultProfile);
+      await db.ref('profileDirectory/'+user.uid).set(defaultProfile);
+      currentUser=defaultProfile;
+    } else {
+      currentUser=profileSnap.val();
+      currentUser.uid=currentUser.uid||user.uid;
+    }
     status(''); showApp();
   }catch(e){console.error('Login error:', e); status(authError(e));}
   finally{loginBtn.disabled=false;}
@@ -173,44 +184,53 @@ async function logout(){
 
 function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
 
-// জরুরি ফিক্সড লিসেনার: সব ইউজার সরাসরি লোড করার জন্য
+// মাস্টার লিসেনার: সব ইউজার, চ্যাট, রিকোয়েস্ট এবং স্টোরি রিয়েল-টাইমে সিঙ্ক করবে
 function startListeners(){
   if(!currentUser||listenersStarted)return; listenersStarted=true;
   
   db.ref('profiles').on('value', snap => {
     const val = snap.val() || {};
+    allUsers={};
     Object.keys(val).forEach(uid => {
       const p = val[uid];
-      if(p) { allUsers[uid] = { ...p, uid: p.uid || uid }; }
+      if(p && typeof p==='object') { allUsers[uid] = { ...p, uid: p.uid || uid }; }
     });
     renderUI();
+    renderStoryFriendChoices();
   });
 
   db.ref('profileDirectory').on('value', snap => {
     const val = snap.val() || {};
     Object.keys(val).forEach(uid => {
       const p = val[uid];
-      if(p && !allUsers[uid]) { allUsers[uid] = { ...p, uid: p.uid || uid }; }
+      if(p && typeof p==='object' && !allUsers[uid]) { allUsers[uid] = { ...p, uid: p.uid || uid }; }
     });
     renderUI();
   });
 
-  watch('friends/'+currentUser.uid,v=>{friendships=v||{}; renderUI(); loadStories()});
+  watch('friends/'+currentUser.uid,v=>{friendships=v||{}; renderUI(); renderStoryFriendChoices(); loadStories()});
   watch('chatAccess/'+currentUser.uid,v=>{chatAccess=v||{}; renderUI()});
   watch('friendRequests/'+currentUser.uid,v=>{incomingRequests=v||{}; renderUI()});
   watch('friendRequestsSent/'+currentUser.uid,v=>{sentRequests=v||{}; renderUI()});
-  watch('messageRequests/'+currentUser.uid,v=>{messageRequests=v||{}; renderUI()});
+  watch('messageRequests/'+currentUser.uid,v=>{messageRequests=v||{}; renderUI(); syncAcceptedMessageChats(v)});
+  watch('friendRequestAllowed/'+currentUser.uid,v=>{friendRequestAllowed=v||{}; renderUI()});
   watch('blocked/'+currentUser.uid,v=>{blockedUsers=v||{}; renderUI()});
+  watch('restricted/'+currentUser.uid,v=>{restrictedUsers=v||{}; renderUI()});
+  watch('muted/'+currentUser.uid,v=>{mutedUsers=v||{}; renderUI(); attachIncomingNotifications()});
   watch('presence',v=>{window.presenceData=v||{}; renderUI()});
+  setTimeout(attachIncomingNotifications,800);
 }
 
+function syncAcceptedMessageChats(requests){Object.entries(requests||{}).forEach(([peer,request])=>{if(request?.status!=='accepted'||chatAccess[peer]===true)return;const updates={};updates['chatAccess/'+currentUser.uid+'/'+peer]=true;updates['chatAccess/'+peer+'/'+currentUser.uid]=true;db.ref().update(updates).catch(e=>console.error(e))})}
 function formatLastSeen(ts){if(!ts)return '';const d=Math.max(0,Date.now()-ts),m=Math.floor(d/60000);if(m<1)return 'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d'}
+function attachIncomingNotifications(){if(!currentUser)return;notificationListeners.forEach(x=>db.ref(x.path).off('child_added',x.cb));notificationListeners=[];Object.entries(friendships||{}).filter(([,v])=>v==='accepted').forEach(([uid])=>{const path=chatPath(currentUser.uid,uid);let initial=true;const cb=snap=>{if(initial)return;const m=snap.val();if(!m||m.sender===currentUser.uid||mutedUsers[uid])return;notifyUser((allUsers[uid]?.name||'APCHAT')+': '+(m.text||m.fileName||'New message'));playNotificationSound()};db.ref(path).once('value').then(()=>{initial=false});db.ref(path).on('child_added',cb);notificationListeners.push({path,cb})})}
+function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{o.stop();c.close()},140)}catch(e){}}
 function startPresence(){const ref=db.ref('presence/'+currentUser.uid);ref.onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP});ref.update({online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP})}
 function switchTab(t){['chats','requests','people'].forEach(n=>{$(n+'View').classList.toggle('hidden',n!==t);const b=$('tab'+n[0].toUpperCase()+n.slice(1)+'Btn');b.classList.toggle('text-blue-400',n===t);b.classList.toggle('text-gray-400',n!==t)});renderUI();}
 function userCard(u,sub=''){const d=document.createElement('div');d.className='flex items-center gap-3 min-w-0';const im=document.createElement('img');im.src=fallback;im.className='w-10 h-10 rounded-full object-cover';if(u.uid&&(u.uid===currentUser.uid||u.privacy!=='private'||friendships[u.uid]==='accepted'))db.ref('profilePhotos/'+u.uid).once('value').then(ps=>{if(ps.val()?.url)im.src=ps.val().url}).catch(()=>{});const tx=document.createElement('span');tx.className='min-w-0';tx.innerHTML='<b class="block text-sm" style="white-space:normal;overflow-wrap:anywhere;line-height:1.25">'+esc(u.name||'User')+'</b><small class="text-gray-400">'+esc(sub||('@'+(u.handle||'')))+'</small>';const uid=u.uid,p=window.presenceData?.[uid];const wrap=document.createElement('div');wrap.className='chat-avatar-wrap';wrap.append(im);if(p?.online){const dot=document.createElement('span');dot.className='chat-presence-dot';wrap.append(dot)}else if(p?.lastSeen){const ls=document.createElement('span');ls.className='chat-lastseen';ls.textContent=formatLastSeen(p.lastSeen);wrap.append(ls)}d.insertBefore(wrap,tx);return d}
 function addEmpty(el,msg){if(!el.children.length){const p=document.createElement('p');p.className='text-xs text-gray-500 p-2';p.textContent=msg;el.append(p)}}
 
-// ওভাররাইডেড রেন্ডারিং ফাংশন: ডিসকভারে সব একাউন্ট দেখাবে এবং চ্যাট বা রিকোয়েস্ট ওপেন রাখবে
+// ফুল রেন্ডারিং লজিক (চ্যাট, রিকোয়েস্ট ও ডিসকভার)
 function renderUI(){
   if(!currentUser)return;
   const chats=$('chatsView'),req=$('friendRequestsList'),msgs=$('messageRequestsList'),sent=$('sentRequestsList'),people=$('peopleView');
@@ -222,44 +242,94 @@ function renderUI(){
     const n=String(u.name||''),h=String(u.handle||'');
     if(q&&!n.toLowerCase().includes(q)&&!h.toLowerCase().includes(q))return;
     
-    // ১. ডিসকভার ট্যাবে সব ইউজার শো করবে
-    const pCard=document.createElement('div');pCard.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';pCard.append(userCard(u,'@'+(u.handle||'')+' · '+(u.privacy==='private'?'Private':'Public')));
-    const actionBtn=document.createElement('button');actionBtn.className='px-3 py-2 rounded-lg text-xs bg-blue-600 text-white';actionBtn.textContent='Message / Chat';
-    actionBtn.onclick=()=>openChat(u.uid);pCard.append(actionBtn);people.append(pCard);
-
-    // ২. চ্যাট লিস্টে বা চ্যাট এক্সেসে সরাসরি যুক্ত হবে
-    const b=document.createElement('button');b.className='w-full text-left flex items-center gap-3 p-3 border-b border-gray-800';
-    b.append(userCard(u,'Chat'));b.type='button';b.onclick=(ev)=>{ev.preventDefault();openChat(u.uid);};
-    chats.append(b);
+    // Accepted Chats
+    if(friendships[u.uid]==='accepted'||chatAccess[u.uid]===true){
+      const b=document.createElement('button');b.className='w-full text-left flex items-center gap-3 p-3 border-b border-gray-800';
+      b.append(userCard(u,mutedUsers[u.uid]?'Muted':'Chat'));b.type='button';b.onclick=(ev)=>{ev.preventDefault();if(!longPressTriggered)openChat(u.uid);longPressTriggered=false};
+      db.ref('nicknames/'+currentUser.uid+'/'+u.uid).once('value').then(ns=>{if(ns.val()){const title=b.querySelector('b');if(title)title.textContent=ns.val();}});
+      chats.append(b);
+    }
+    
+    // Incoming Friend Requests
+    if(incomingRequests[u.uid]){
+      const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u));
+      const actions=document.createElement('div');actions.className='flex gap-1';
+      [['Accept','bg-green-600',()=>acceptFriendReq(u.uid)],['Reject','bg-gray-600',()=>rejectFriendReq(u.uid)]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' px-2 py-2 rounded-lg text-xs text-white';x.onclick=fn;actions.append(x)});
+      b.append(actions);req.append(b);
+    }
+    
+    // Message Requests
+    if(messageRequests[u.uid]?.status==='pending'){
+      const b=document.createElement('div');b.className='p-3 bg-gray-800 rounded-xl space-y-2';b.append(userCard(u,'@'+(u.handle||'')+' · Message request'));
+      const p=document.createElement('p');p.className='text-sm break-words';p.textContent=messageRequests[u.uid].text||'Message request';b.append(p);
+      const a=document.createElement('div');a.className='flex gap-2';
+      [['Accept','bg-green-600',()=>acceptMessageRequest(u.uid)],['Block','bg-red-700',()=>denyMessageRequest(u.uid,'blocked')],['Delete','bg-gray-600',()=>denyMessageRequest(u.uid,'deleted')]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' flex-1 py-2 rounded-lg text-xs text-white';x.onclick=fn;a.append(x)});
+      b.append(a);msgs.append(b);
+    }
+    
+    // Sent Requests
+    if(sentRequests[u.uid]){
+      const b=document.createElement('div');b.className='flex items-center justify-between p-2 bg-gray-800 rounded-xl';b.append(userCard(u,'Friend request sent'));
+      const x=document.createElement('button');x.textContent='Cancel';x.className='text-xs bg-gray-600 px-3 py-2 rounded text-white';x.onclick=()=>cancelFriendReq(u.uid);b.append(x);sent.append(b);
+    }
+    
+    // Discover People Tab
+    if(friendships[u.uid]!=='accepted'&&!incomingRequests[u.uid]&&!sentRequests[u.uid]&&messageRequests[u.uid]?.status!=='pending'){
+      const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u,'@'+(u.handle||'')+' · '+(u.privacy==='private'?'Private':'Public')));
+      const canFriendRequest=u.privacy!=='private'||friendRequestAllowed[u.uid]===true;const x=document.createElement('button');
+      x.className='px-3 py-2 rounded-lg text-xs text-white '+(canFriendRequest?'bg-blue-600':'bg-purple-700');x.textContent=canFriendRequest?'Add Friend':'Message Request';
+      x.onclick=()=>canFriendRequest?sendFriendReq(u.uid):sendMessageRequest(u.uid);b.append(x);people.append(b);
+    }
   });
-
-  // ফ্রেন্ড ও মেসেজ রিকোয়েস্টগুলো দেখানোর লজিক
-  Object.entries(incomingRequests).forEach(([uid])=>{
-    const u=allUsers[uid]; if(!u)return;
-    const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u));
-    const x=document.createElement('button');x.textContent='Accept';x.className='bg-green-600 px-3 py-2 rounded-lg text-xs text-white';x.onclick=()=>acceptFriendReq(u.uid);b.append(x);req.append(b);
-  });
-
-  addEmpty(chats,'No chats available.'); addEmpty(req,'No incoming friend requests.'); addEmpty(msgs,'No message requests.'); addEmpty(sent,'No sent requests.'); addEmpty(people,'No users found.');
+  
+  addEmpty(chats,'No accepted friends yet.'); addEmpty(req,'No incoming friend requests.'); addEmpty(msgs,'No message requests.'); addEmpty(sent,'No sent requests.'); addEmpty(people,'No users found.');
+  const count=Object.keys(incomingRequests).length+Object.values(messageRequests).filter(x=>x?.status==='pending').length; $('requestBadge').textContent=count?'('+count+')':'';
 }
+
+async function sendFriendReq(uid){
+  const target=allUsers[uid]; if(!target)return alert('User পাওয়া যায়নি।');
+  if(blockedUsers[uid])return alert('এই ব্যবহারকারীকে আপনি ব্লক করেছেন।');
+  if(friendships[uid]==='accepted')return alert('আপনারা ইতিমধ্যে Friend।');
+  if(target.privacy==='private'){
+    const denied=await db.ref('friendRequestDenied/'+uid+'/'+currentUser.uid).once('value');
+    const allowed=await db.ref('friendRequestAllowed/'+currentUser.uid+'/'+uid).once('value');
+    if(denied.val()!==true&&allowed.val()!==true)return sendMessageRequest(uid);
+    if(denied.val()===true)return sendMessageRequest(uid);
+  }
+  try{
+    const now=Date.now(),updates={};
+    updates['friendRequests/'+uid+'/'+currentUser.uid]={from:currentUser.uid,status:'pending',createdAt:now};
+    updates['friendRequestsSent/'+currentUser.uid+'/'+uid]={to:uid,status:'pending',createdAt:now};
+    updates['friends/'+currentUser.uid+'/'+uid]='sent';
+    await db.ref().update(updates); alert('Friend request sent');
+  }catch(e){alert('Request failed: '+e.message)}
+}
+async function cancelFriendReq(uid){try{const u={};u['friendRequests/'+uid+'/'+currentUser.uid]=null;u['friendRequestsSent/'+currentUser.uid+'/'+uid]=null;u['friends/'+currentUser.uid+'/'+uid]=null;await db.ref().update(u)}catch(e){alert(e.message)}}
+async function acceptFriendReq(uid){try{const u={};u['friends/'+currentUser.uid+'/'+uid]='accepted';u['friends/'+uid+'/'+currentUser.uid]='accepted';u['friendRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestsSent/'+uid+'/'+currentUser.uid]=null;await db.ref().update(u)}catch(e){alert('Accept failed: '+e.message)}}
+async function rejectFriendReq(uid){if(!confirm('Friend request reject করবেন?'))return;try{const u={};u['friendRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestsSent/'+uid+'/'+currentUser.uid]=null;u['friends/'+uid+'/'+currentUser.uid]=null;await db.ref().update(u)}catch(e){alert(e.message)}}
+async function sendMessageRequest(uid){const target=allUsers[uid];if(!target)return;const old=await db.ref('messageRequests/'+uid+'/'+currentUser.uid).once('value');if(old.val()?.status==='pending')return alert('আপনার Message Request আগে থেকেই Pending আছে।');const text=prompt('Message Request-এর সঙ্গে একটি ছোট মেসেজ লিখুন:','হ্যালো! আমি আপনার সঙ্গে যোগাযোগ করতে চাই।');if(text===null||!text.trim())return;try{await db.ref('messageRequests/'+uid+'/'+currentUser.uid).set({from:currentUser.uid,text:text.trim().slice(0,1000),status:'pending',createdAt:Date.now()});alert('Message Request পাঠানো হয়েছে।')}catch(e){alert(e.message)}}
+async function acceptMessageRequest(uid){try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid+'/status']='accepted';u['messageRequests/'+currentUser.uid+'/'+uid+'/respondedAt']=Date.now();u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=true;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=null;await db.ref().update(u);const access={};access['chatAccess/'+currentUser.uid+'/'+uid]=true;access['chatAccess/'+uid+'/'+currentUser.uid]=true;await db.ref().update(access);renderUI();alert('Message Request accepted.')}catch(e){alert(e.message)}}
+async function denyMessageRequest(uid,mode){if(!confirm('নিশ্চিত করতে চান?'))return;try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=null;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=true;await db.ref().update(u)}catch(e){alert(e.message)}}
 
 async function openChat(uid){
   try{
     if(!currentUser||!uid||uid===currentUser.uid)return;
-    let u=allUsers[uid]; if(!u)return alert('User পাওয়া যায়নি।');
+    let u=allUsers[uid];
+    if(!u){const profileSnap=await db.ref('profiles/'+uid).once('value');u=profileSnap.val();if(u)u={...u,uid:u.uid||uid};if(!u){const directorySnap=await db.ref('profileDirectory/'+uid).once('value');u=directorySnap.val();}if(!u){alert('প্রোফাইল পাওয়া যায়নি।');return;}allUsers[uid]=u;}
     chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; messageRecords={};
     activeChatUserId=uid;
     $('chatArea').classList.remove('hidden'); $('chatArea').classList.add('flex');
     if(window.innerWidth<700){$('sidebar').classList.add('hidden'); $('chatArea').style.width='100%';}
     $('emptyChatState').classList.add('hidden'); $('activeChatInterface').classList.remove('hidden'); $('activeChatInterface').classList.add('flex');
-    $('activeChatAvatar').src=fallback;
+    $('activeChatAvatar').src=fallback; db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(activeChatUserId===uid&&ps.val()?.url)$('activeChatAvatar').src=ps.val().url}).catch(()=>{});
     $('activeChatName').textContent=u.name||'User';
+    db.ref('nicknames/'+currentUser.uid+'/'+uid).once('value').then(ns=>{if(activeChatUserId===uid&&ns.val())$('activeChatName').textContent=ns.val()});
     $('messagesContainer').innerHTML=''; $('messageInput').value=''; clearReply();
     loadMessages(); listenTyping();
     setTimeout(()=>$('messageInput').focus(),100);
   }catch(e){console.error(e); alert('চ্যাট খুলতে সমস্যা হয়েছে।');}
 }
-function closeChat(){chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; activeChatUserId=null; $('activeChatInterface').classList.add('hidden'); $('emptyChatState').classList.remove('hidden'); if(innerWidth<700){$('chatArea').classList.add('hidden'); $('chatArea').classList.remove('flex'); $('sidebar').classList.remove('hidden'); $('chatArea').style.width=''}}
+function closeChat(){chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; activeChatUserId=null; $('activeChatInterface').classList.add('hidden'); $('emptyChatState').classList.remove('hidden'); $('typingIndicator').classList.add('hidden'); clearReply(); if(innerWidth<700){$('chatArea').classList.add('hidden'); $('chatArea').classList.remove('flex'); $('sidebar').classList.remove('hidden'); $('chatArea').style.width=''}}
 function loadMessages(){
   chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; messageRecords={}; const box=$('messagesContainer'); box.innerHTML=''; let first=true;
   const draw=()=>{
@@ -268,8 +338,17 @@ function loadMessages(){
       if(!m)return;
       const mine=m.sender===currentUser.uid,row=document.createElement('div'); row.id='msg-'+id; row.className='message-row '+(mine?'mine-row':'their-row');
       const bubble=document.createElement('div'); bubble.className='bubble '+(mine?'mine':'theirs');
+      if(m.replyTo?.id){
+        const rp=document.createElement('button'); rp.type='button'; rp.className='reply-quote'; rp.onclick=()=>jumpToMessage(m.replyTo.id);
+        if(m.replyTo.url&&(m.replyTo.type==='image'||m.replyTo.type==='video')){const thumb=document.createElement(m.replyTo.type==='video'?'video':'img'); thumb.src=m.replyTo.url; rp.append(thumb);}
+        const rt=document.createElement('span'); rt.className='reply-quote-text'; rt.textContent='Reply: '+(m.replyTo.text||'Message'); rp.append(rt); bubble.append(rp);
+      }
       if(m.text){const p=document.createElement('p'); p.className='text-sm whitespace-pre-wrap break-words'; p.textContent=m.text; bubble.append(p);}
-      row.append(bubble); box.append(row);
+      if(m.type==='image'&&m.url){const im=document.createElement('img'); im.src=m.url; im.className='media-thumb'; im.onclick=()=>openMediaViewer(m.url,'image'); bubble.append(im);}
+      if(m.type==='video'&&m.url){const wrap=document.createElement('div'); wrap.className='video-thumb-wrap'; const v=document.createElement('video'); v.src=m.url; const play=document.createElement('span'); play.className='video-thumb-play'; play.textContent='▶'; wrap.append(v,play); wrap.onclick=()=>openMediaViewer(m.url,'video'); bubble.append(wrap);}
+      row.append(bubble);
+      const meta=document.createElement('div'); meta.className='message-meta'; meta.textContent=(m.time||'')+(mine?' · '+(m.status==='seen'?'Seen':'Sent'):''); row.append(meta);
+      box.append(row);
     });
     if(nearBottom||first)box.scrollTop=box.scrollHeight; first=false;
   };
@@ -278,27 +357,191 @@ function loadMessages(){
     db.ref(p).on('value',cb); chatListeners.push({path:p,cb});
   });
 }
+function jumpToMessage(id){const target=$('msg-'+id);if(!target)return; target.scrollIntoView({behavior:'smooth',block:'center'});}
 async function writeMessage(record){
   if(!activeChatUserId)throw Error('চ্যাট নির্বাচন করা হয়নি।');
-  const key=db.ref().child('messageKey').push().key, m={...record,id:key,sender:currentUser.uid,receiver:activeChatUserId,status:'sent',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()};
+  const key=db.ref().child('messageKey').push().key, m={...record,replyTo:replyTo?{...replyTo}:null,id:key,sender:currentUser.uid,receiver:activeChatUserId,status:'sent',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()};
   const u={}; u[chatPath(currentUser.uid,activeChatUserId)+'/'+key]=m; u[chatPath(activeChatUserId,currentUser.uid)+'/'+key]=m;
+  u['chatMeta/'+currentUser.uid+'/'+activeChatUserId]={lastMessage:m.text||'Media',lastMessageAt:m.createdAt,unreadCount:0};
   await db.ref().update(u); return key;
 }
-async function sendMessage(){const input=$('messageInput'),txt=input.value.trim();if(!txt)return;try{await writeMessage({type:'text',text:txt}); input.value='';}catch(e){alert(e.message);}}
+async function sendMessage(){const input=$('messageInput'),txt=input.value.trim();if(!txt)return;try{await writeMessage({type:'text',text:txt}); input.value=''; clearReply();}catch(e){alert(e.message);}}
 function handleKeyPress(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendMessage();}}
-function onMessageTyping(){if(!activeChatUserId)return; db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).set({typing:true,at:Date.now()}).catch(()=>{});}
+function setReply(id,m){replyTo={id,text:m.text||'Media',type:m.type||'text',url:m.url||'',sender:m.sender||''}; $('replyPreviewText').textContent='Reply: '+replyTo.text; $('replyPreview').classList.remove('hidden');}
+function clearReply(){replyTo=null; $('replyPreview')?.classList.add('hidden');}
+function onMessageTyping(){if(!activeChatUserId)return; db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).set({typing:true,at:Date.now()}).catch(()=>{}); clearTimeout(typingTimer); typingTimer=setTimeout(()=>{db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).remove().catch(()=>{})},1800);}
 function listenTyping(){const p='typing/'+activeChatUserId+'/'+currentUser.uid+'/'+activeChatUserId; const cb=s=>{$('typingIndicator').classList.toggle('hidden',!s.val()?.typing); $('typingIndicator').textContent='Typing...';}; db.ref(p).on('value',cb); chatListeners.push({path:p,cb});}
-function togglePrivacySettings(){$('privacyModal').classList.remove('hidden')}
+async function uploadToCloudinary(file,resourceType){const form=new FormData();form.append('file',file);form.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);form.append('folder','apchat');const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,{method:'POST',body:form});const d=await res.json();if(d.secure_url)return d.secure_url;throw Error('Upload failed');}
+function openMediaViewer(url,type){const stage=$('mediaViewerStage');stage.innerHTML=''; const el=document.createElement(type==='video'?'video':'img'); el.src=url; if(type==='video')el.controls=true; el.style.maxWidth='100%'; el.style.maxHeight='100%'; stage.append(el); $('mediaViewer').classList.remove('hidden');}
+function closeMediaViewer(){$('mediaViewer').classList.add('hidden'); $('mediaViewerStage').innerHTML='';}
+async function sendMedia(file,type){if(!file)return;try{const url=await uploadToCloudinary(file,type); await writeMessage({type,url});}catch(e){alert(e.message);}}
+async function uploadPhoto(file){if(!file)return;try{const url=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; alert('Profile photo updated');}catch(e){alert(e.message);}}
+function chooseProfilePhoto(){$('photoInput').click()}
+function togglePrivacySettings(){if(!currentUser)return;$('privacySelect').value=currentUser.privacy||'public';$('privacyModal').classList.remove('hidden')}
 function closePrivacyModal(){$('privacyModal').classList.add('hidden')}
-async function savePrivacySettings(){closePrivacyModal(); alert('Updated');}
-function uploadPhoto(file){}
-function chooseProfilePhoto(){}
-function uploadStory(file){}
-function cancelStory(){}
-function postStory(){}
-function loadStories(){}
-function showChatMoreMenu(anchor){}
-function clearReply(){}
+async function savePrivacySettings(){
+  const v=$('privacySelect').value;
+  try{
+    await db.ref('profiles/'+currentUser.uid+'/privacy').set(v);
+    await db.ref('profileDirectory/'+currentUser.uid+'/privacy').set(v);
+    currentUser.privacy=v;
+    $('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;
+    closePrivacyModal();
+    alert('Privacy updated successfully');
+  }catch(e){alert('Save failed: '+e.message);}
+}
+async function showPrivacyList(type){
+  const listEl=$('privacyAccountList'); listEl.innerHTML='<p class="text-xs text-gray-400">Loading...</p>';
+  try{
+    const snap=await db.ref(type+'/'+currentUser.uid).once('value');
+    const data=snap.val()||{};
+    const uids=Object.keys(data);
+    listEl.innerHTML='';
+    if(uids.length===0){listEl.innerHTML=`<p class="text-xs text-gray-400">No ${type} accounts.</p>`;return;}
+    uids.forEach(async peerId=>{
+      const pSnap=await db.ref('profiles/'+peerId).once('value');
+      const p=pSnap.val()||{};
+      const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2';
+      row.innerHTML=`<span><b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span>`;
+      const unBtn=document.createElement('button'); unBtn.textContent='Remove'; unBtn.className='text-xs bg-red-600 px-2 py-1 rounded text-white';
+      unBtn.onclick=async()=>{await db.ref(type+'/'+currentUser.uid+'/'+peerId).remove(); row.remove();};
+      row.append(unBtn); listEl.append(row);
+    });
+  }catch(e){listEl.innerHTML='<p class="text-xs text-red-400">Error loading list</p>';}
+}
+async function showMyPhotoLoves(){
+  const listEl=$('privacyAccountList'); listEl.innerHTML='<p class="text-xs text-gray-400">Loading...</p>';
+  try{
+    const snap=await db.ref('profilePhotoLoves/'+currentUser.uid).once('value');
+    const data=snap.val()||{};
+    const uids=Object.keys(data);
+    listEl.innerHTML='';
+    if(uids.length===0){listEl.innerHTML='<p class="text-xs text-gray-400">কেউ এখনো আপনার প্রোফাইল পিকচারে লাভ রিয়্যাক্ট দেয়নি।</p>';return;}
+    uids.forEach(async reactorId=>{
+      const pSnap=await db.ref('profiles/'+reactorId).once('value');
+      const p=pSnap.val()||{};
+      const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2';
+      row.innerHTML=`<span>❤️ <b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span><span class="text-xs text-pink-400 font-bold">Loved</span>`;
+      listEl.append(row);
+    });
+  }catch(e){listEl.innerHTML='<p class="text-xs text-red-400">Error loading loves</p>';}
+}
+function showUserProfile(uid){
+  if(!uid)return;
+  db.ref('profiles/'+uid).once('value').then(snap=>{
+    const u=snap.val(); if(!u)return;
+    $('userProfileRealName').textContent=u.name||'User';
+    $('userProfileHandle').textContent='@'+(u.handle||'');
+    $('userProfileBio').textContent=u.bio||'Using APCHAT';
+    $('userProfilePrivacy').textContent='Account: '+(u.privacy||'public');
+    $('userProfilePhoto').src=fallback;
+    db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(ps.val()?.url)$('userProfilePhoto').src=ps.val().url});
+    let loveDiv=$('userProfileModal').querySelector('#profileLoveAction');
+    if(!loveDiv){loveDiv=document.createElement('div');loveDiv.id='profileLoveAction';loveDiv.className='mt-3';$('userProfileModal').querySelector('.bg-gray-900').append(loveDiv);}
+    loveDiv.innerHTML='';
+    if(uid!==currentUser.uid){
+      const loveBtn=document.createElement('button'); loveBtn.className='px-4 py-2 bg-pink-600 rounded-xl text-xs font-bold text-white'; loveBtn.textContent='❤️ Give Profile Photo Love';
+      loveBtn.onclick=async()=>{await db.ref('profilePhotoLoves/'+uid+'/'+currentUser.uid).set({at:Date.now()});alert('❤️ Profile photo loved successfully!');};
+      loveDiv.append(loveBtn);
+    }
+    $('userProfileModal').classList.remove('hidden');
+  });
+}
+function closeUserProfile(){$('userProfileModal').classList.add('hidden')}
+async function uploadStory(file){
+  if(!file)return;
+  try{
+    pendingStoryFile=file; const preview=$('storyPreview'); preview.innerHTML='';
+    const url=URL.createObjectURL(file), isVideo=file.type.startsWith('video/');
+    const media=document.createElement(isVideo?'video':'img'); media.src=url; media.className='w-full rounded-lg max-h-[220px] object-contain'; preview.append(media);
+    $('storyPrivacyModal').classList.remove('hidden');
+  }catch(e){alert(e.message);}
+}
+function cancelStory(){$('storyPrivacyModal').classList.add('hidden'); pendingStoryFile=null;}
+async function postStory(){
+  if(!pendingStoryFile)return;
+  const btn=$('postStoryBtn'); btn.disabled=true; btn.textContent='Uploading...';
+  try{
+    const file=pendingStoryFile, isVideo=file.type.startsWith('video/');
+    const mediaUrl=await uploadToCloudinary(file, isVideo?'video':'image');
+    const key=db.ref('stories/'+currentUser.uid).push().key;
+    const now=Date.now();
+    const record={mediaUrl,mediaType:isVideo?'video':'image',name:currentUser.name,handle:currentUser.handle,createdAt:now,expiresAt:now+86400000};
+    await db.ref('stories/'+currentUser.uid+'/'+key).set(record);
+    cancelStory(); alert('Story posted'); loadStories();
+  }catch(e){alert(e.message);}finally{btn.disabled=false; btn.textContent='Post Story';}
+}
+async function loadStories(){
+  const bar=$('apStories'); if(!bar||!currentUser)return;
+  bar.innerHTML='';
+  const add=document.createElement('button'); add.className='apStory'; add.innerHTML='<span style="display:block;font-size:30px">＋</span>Add Story'; add.onclick=()=>$('storyInput').click(); bar.append(add);
+  try{
+    const snap=await db.ref('stories').once('value'), data=snap.val()||{}, now=Date.now();
+    for(const [uid,items] of Object.entries(data)){
+      for(const [id,s] of Object.entries(items||{})){
+        if(!s||!s.mediaUrl||!s.expiresAt||s.expiresAt<now)continue;
+        const b=document.createElement('button'); b.className='apStory';
+        const im=document.createElement('img'); im.className='story-ring'; im.src=s.mediaUrl;
+        const label=document.createElement('span'); label.className='block truncate'; label.textContent=s.name||'User';
+        b.append(im,label); b.onclick=()=>viewStory(uid,id,s); bar.append(b);
+      }
+    }
+  }catch(e){console.error(e);}
+}
+function viewStory(ownerUid,storyId,s){
+  activeStory={ownerUid,storyId,story:s};
+  $('storyOwnerName').textContent=s.name||'User';
+  $('storyOwnerHandle').textContent='@'+(s.handle||'');
+  const wrap=$('storyMediaWrap'); wrap.innerHTML='';
+  const media=document.createElement(s.mediaType==='video'?'video':'img');
+  media.src=s.mediaUrl; if(s.mediaType==='video'){media.controls=true; media.autoplay=true;} media.id='storyMedia'; wrap.append(media);
+  const isOwner=(ownerUid===currentUser.uid);
+  $('storyReactionArea').classList.toggle('hidden',isOwner);
+  $('storyOwnerReactionPanel').classList.toggle('hidden',!isOwner);
+  if(isOwner){
+    db.ref('storyViews/'+ownerUid+'/'+storyId).on('value', snap=>{
+      const views = snap.val() || {};
+      const viewersCount = Object.keys(views).length;
+      $('storyReactionTotal').textContent = viewersCount + ' views';
+      const list=$('storyOwnerReactionPanel').querySelector('#storyReactionPeople');
+      list.innerHTML='';
+      if(viewersCount===0){list.innerHTML='<p class="text-xs text-gray-400">কেউ এখনো স্টোরি দেখেনি (No views yet)।</p>';}
+      else{
+        Object.keys(views).forEach(viewerId=>{
+          db.ref('profiles/'+viewerId).once('value').then(pSnap=>{
+            const p = pSnap.val() || {};
+            const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2 text-xs';
+            row.innerHTML=`<span><b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span><span class="text-green-400 font-bold">Seen ✓</span>`;
+            list.append(row);
+          });
+        });
+      }
+    });
+  }else{
+    db.ref('storyViews/'+ownerUid+'/'+storyId+'/'+currentUser.uid).set({viewedAt: Date.now()}).catch(()=>{});
+  }
+  const emojiBox=$('storyEmojiButtons'); emojiBox.innerHTML='';
+  ['❤️','😂','😍','🔥','👍','😢'].forEach(emoji=>{
+    const b=document.createElement('button'); b.textContent=emoji;
+    b.onclick=()=>sendStoryReaction(ownerUid,storyId,emoji); emojiBox.append(b);
+  });
+  $('storyModal').classList.remove('hidden');
+}
+function closeStory(){$('storyModal').classList.add('hidden');const v=$('storyMediaWrap').querySelector('video');if(v)v.pause();activeStory=null;}
+async function sendStoryReaction(ownerUid,storyId,emoji){
+  if(ownerUid===currentUser.uid)return;
+  try{await db.ref('stories/'+ownerUid+'/'+storyId+'/reactions/'+currentUser.uid).set({uid:currentUser.uid,name:currentUser.name,emoji,createdAt:Date.now()});alert('Reaction sent!');}catch(e){alert(e.message);}
+}
+function showChatMoreMenu(anchor){
+  document.querySelector('.chat-menu')?.remove(); if(!activeChatUserId)return;
+  const uid=activeChatUserId, menu=document.createElement('div'); menu.className='chat-menu';
+  const addButton=(label,fn)=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{menu.remove(); fn();}; menu.append(b);};
+  addButton('👤 Profile',()=>showUserProfile(uid));
+  addButton('🗑️ Delete chat',()=>deleteLocalChat(uid));
+  document.body.append(menu);
+  const r=anchor.getBoundingClientRect(); menu.style.left=Math.max(8,Math.min(innerWidth-260,r.right-245))+'px'; menu.style.top=(r.bottom+4)+'px';
+}
+async function deleteLocalChat(uid){if(!confirm('চ্যাট মুছবেন?'))return; await db.ref('chatMeta/'+currentUser.uid+'/'+uid).remove(); closeChat();}
 </script>
 </body>
 </html>
