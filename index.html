@@ -120,8 +120,59 @@ async function handleRegister(){
  catch(e){if(reserved&&cred?.user)await db.ref('handles/'+handle).remove().catch(()=>{});if(cred?.user)await cred.user.delete().catch(()=>{});currentUser=null;showAuth();status(authError(e))}
  finally{$('registerBtn').disabled=false}
 }
-async function handleLogin(){if(!auth)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');const phone=cleanPhone($('loginPhone').value),password=$('loginPassword').value;if(!phone||!password)return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');$('loginBtn').disabled=true;status('লগইন হচ্ছে...');try{await auth.signInWithEmailAndPassword(phoneEmail(phone),password)}catch(e){status(authError(e))}finally{$('loginBtn').disabled=false}}
+ async function handleLogin(){
+  if(!auth || !db){
+    return status(
+      window.__firebaseInitError?.message ||
+      'Firebase ready হয়নি।'
+    );
+  }
 
+  const phone = cleanPhone($('loginPhone').value);
+  const password = $('loginPassword').value;
+
+  if(!phone || !password){
+    return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');
+  }
+
+  const loginBtn = $('loginBtn');
+  loginBtn.disabled = true;
+  status('লগইন হচ্ছে...');
+
+  try{
+    const credential =
+      await auth.signInWithEmailAndPassword(
+        phoneEmail(phone),
+        password
+      );
+
+    const user = credential.user;
+
+    if(!user){
+      throw new Error('লগইন সম্পন্ন করা যায়নি।');
+    }
+
+    const profileSnap =
+      await db.ref('profiles/' + user.uid)
+      .once('value');
+
+    if(!profileSnap.exists()){
+      await auth.signOut();
+      status('আপনার Profile পাওয়া যায়নি। অনুগ্রহ করে আবার Create Account করুন।');
+      return;
+    }
+
+    currentUser = profileSnap.val();
+    status('');
+    showApp();
+
+  }catch(e){
+    console.error('Login error:', e);
+    status(authError(e));
+  }finally{
+    loginBtn.disabled = false;
+  }
+}
 // Keep authentication controls available even if a later optional Messenger feature fails.
 window.switchAuthView=switchAuthView; window.handleLogin=handleLogin; window.handleRegister=handleRegister;
 window.addEventListener('error',e=>{const box=document.getElementById('authStatus'); if(box && !document.getElementById('authScreen').classList.contains('hidden')) box.textContent='App error: '+(e.message||'Unknown error');});
