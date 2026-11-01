@@ -29,7 +29,7 @@
 #mediaViewerClose{position:absolute;top:env(safe-area-inset-top,10px);right:14px;z-index:2;width:42px;height:42px;border-radius:50%;background:#333c;color:white;font-size:28px;line-height:1}.privacy-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #374151;border-radius:12px;background:#111827}
 .privacy-choice:has(input:checked){border-color:#3b82f6;background:#172554}
 #storyModal{position:fixed;inset:0;background:#000e;z-index:1500;display:flex;align-items:center;justify-content:center;padding:14px;overflow-y:auto}
-#storyCard{width:100%;max-width:520px;max-height:95vh;overflow-y:auto;background:#111827;border:1px solid #374151;border-radius:18px;padding:14px}
+#storyCard{width:100%;max-width:520px;max-height:95vh;overflow-y:auto;background:#111827;border:1px solid #4b5563;border-radius:18px;padding:14px}
 #storyMedia{max-width:100%;max-height:55vh;object-fit:contain;border-radius:12px;margin:auto}
 #callNotice{position:fixed;inset:0;background:#000b;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
 #apStories{display:flex;gap:12px;overflow-x:auto;padding:12px;border-bottom:1px solid #1f2937;min-height:94px}
@@ -312,10 +312,10 @@ function openMediaViewer(url,type){const stage=$('mediaViewerStage');stage.inner
 function closeMediaViewer(){$('mediaViewer').classList.add('hidden'); $('mediaViewerStage').innerHTML='';}
 async function sendMedia(file,type){if(!file)return;try{const url=await uploadToCloudinary(file,type); await writeMessage({type,url});}catch(e){alert(e.message);}}
 
-async function uploadPhoto(file){if(!file)return;try{const url=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; renderUI(); alert('Profile photo updated');}catch(e){alert(e.message);}}
+async function uploadPhoto(file){if(!file)return;try{const url=updateAvatarLocally=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; alert('Profile photo updated');}catch(e){alert(e.message);}}
 function chooseProfilePhoto(){$('photoInput').click()}
 
-/* Fixed Privacy Settings without DOM error */
+/* সম্পূর্ণ সুরক্ষিত এবং এরর-মুক্ত প্রাইভেসি সেটিংস সেভ ফাংশন */
 function togglePrivacySettings(){
   if(!currentUser)return;
   $('privacySelect').value=currentUser.privacy||'public';
@@ -325,13 +325,16 @@ function closePrivacyModal(){$('privacyModal').classList.add('hidden')}
 async function savePrivacySettings(){
   const v=$('privacySelect').value;
   try{
-    await db.ref().update({['profiles/'+currentUser.uid+'/privacy']:v,['profileDirectory/'+currentUser.uid+'/privacy']:v});
+    await db.ref().update({
+      ['profiles/'+currentUser.uid+'/privacy']:v,
+      ['profileDirectory/'+currentUser.uid+'/privacy']:v
+    });
     currentUser.privacy=v;
     $('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;
     closePrivacyModal();
-    renderUI();
-    alert('Privacy updated successfully');
-  }catch(e){alert('Save failed: '+e.message);}
+  }catch(e){
+    alert('Save failed: '+e.message);
+  }
 }
 
 /* Stories & Viewers list fully restored */
