@@ -37,7 +37,6 @@
 
 .chat-topbar{min-height:60px}.chat-title-wrap{overflow:hidden;min-width:0}.chat-title-wrap #activeChatName{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;}.chat-title-wrap #activeChatBio{display:none!important}
 
-/* APCHAT Messenger-style upgrade */
 .single-emoji{font-size:42px;line-height:1.15;padding:4px 8px;background:transparent!important;box-shadow:none!important;max-width:none!important}
 .msg-time-hidden{display:none}.message-meta{font-size:11px;color:#9ca3af;margin:3px 8px}.msg-action-pop{position:fixed;z-index:3000;background:#202938;border:1px solid #4b5563;border-radius:18px;padding:7px;display:flex;gap:6px;box-shadow:0 14px 35px #000a}.msg-action-pop button{padding:8px 11px;border-radius:12px;background:#374151;font-size:13px}.msg-action-pop button:active{transform:scale(.96)}
 .chat-unread-badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}.chat-presence-dot{width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #111827;position:absolute;right:-1px;bottom:-1px}.chat-avatar-wrap{position:relative;flex:none}.chat-lastseen{position:absolute;right:-8px;bottom:-6px;background:#123d1d;color:#8cf58c;border:3px solid #000;border-radius:999px;padding:2px 7px;font-size:11px;font-weight:800;line-height:1.15;white-space:nowrap}.story-ring{border-color:#3b82f6!important;box-shadow:0 0 0 2px #000}.chat-preview{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-pinned{border-left:3px solid #60a5fa;background:#111827}.chat-plus-menu{position:fixed;z-index:2500;background:#202938;border:1px solid #4b5563;border-radius:16px;padding:8px;min-width:190px;box-shadow:0 14px 35px #000a}.chat-plus-menu button{display:block;width:100%;text-align:left;padding:12px;border-radius:10px}.chat-plus-menu button:hover{background:#374151}
@@ -79,20 +78,20 @@
 <div id="storyModal" class="hidden" onclick="if(event.target===this)closeStory()"><div id="storyCard"><div class="flex justify-between items-center mb-3"><div><b id="storyOwnerName"></b><p id="storyOwnerHandle" class="text-xs text-gray-400"></p></div><button onclick="closeStory()" class="text-2xl text-gray-400">×</button></div><div id="storyMediaWrap" class="text-center"></div><div id="storyMusicWrap" class="mt-2"></div><div id="storyReactionArea" class="mt-4 border-t border-gray-700 pt-3"><p class="text-sm font-bold mb-2">React to this story</p><div class="flex flex-wrap gap-3 text-2xl" id="storyEmojiButtons"></div></div><div id="storyOwnerReactionPanel" class="hidden mt-4 border-t border-gray-700 pt-3"><div class="flex justify-between items-center gap-2"><b class="text-sm">Story viewers & reactions</b><span id="storyReactionTotal" class="text-xs text-blue-300"></span></div><div id="storyReactionSummary" class="flex flex-wrap gap-2 my-3"></div><div id="storyReactionPeople" class="space-y-2"></div></div></div></div>
 <input id="fileInput" type="file" hidden onchange="sendGenericFile(this.files[0])"><input id="themeInput" type="file" accept="image/*" hidden onchange="uploadChatTheme(this.files[0])"><input id="photoInput" type="file" accept="image/*" hidden onchange="uploadPhoto(this.files[0])"><input id="storyInput" type="file" accept="image/*,video/*" hidden onchange="uploadStory(this.files[0])"><input id="imageInput" type="file" accept="image/*" hidden onchange="sendMedia(this.files[0],'image')"><input id="videoInput" type="file" accept="video/*" hidden onchange="sendMedia(this.files[0],'video')">
 <script>
-/* APCHAT FRONTEND REWRITE - FIXED & RESTORED */
+/* APCHAT FRONTEND REWRITE - FULLY RESTORED & SYNCED */
 const firebaseConfig={apiKey:"AIzaSyD7ZgOGN87vLRu0-BKaAm5e5c8CKbFWiYs",authDomain:"apchat-app.firebaseapp.com",databaseURL:"https://apchat-app-default-rtdb.firebaseio.com",projectId:"apchat-app",storageBucket:"apchat-app.firebasestorage.app",messagingSenderId:"1089476474245",appId:"1:1089476474245:web:ac8fc99012b09ad58540ec",measurementId:"G-5H1JWCGWN8"};
 let auth,db;
 try{
- if(!window.firebase)throw Error('Firebase library load হয়নি। ইন্টারনেট/CDN connection পরীক্ষা করুন।');
+ if(!window.firebase)throw Error('Firebase library load হয়নি।');
  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
  auth=firebase.auth(); db=firebase.database();
-}catch(e){window.__firebaseInitError=e; setTimeout(()=>{const x=document.getElementById('authStatus');if(x)x.textContent='Firebase শুরু করা যায়নি: '+e.message},0);}
+}catch(e){window.__firebaseInitError=e; setTimeout(()=>{const x=document.getElementById('authStatus');if(x)x.textContent='Firebase error: '+e.message},0);}
 
 const CLOUDINARY_CLOUD_NAME="yio4kivy",CLOUDINARY_UPLOAD_PRESET="apchat_unsigned";
 const $=id=>document.getElementById(id),fallback='https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
 let currentUser=null,activeChatUserId=null,allUsers={},friendships={},chatAccess={},incomingRequests={},sentRequests={},messageRequests={},friendRequestAllowed={},blockedUsers={},messageRecords={};
-let rootListeners=[],chatListeners=[],listenersStarted=false,storyReactionListener=null,storyReactionPath=null,activeStory=null,notificationListeners=[];
-let pendingStoryFile=null,selectedStoryFriends=new Set(),mediaRecorder=null,recordedChunks=[],recordingStream=null,recordingCancelled=false,replyTo=null,typingTimer=null,chatSettingsListener=null,chatSettingsPath=null,quickReactionEmoji="❤️",longPressTriggered=false;
+let rootListeners=[],chatListeners=[],listenersStarted=false,activeStory=null,notificationListeners=[];
+let pendingStoryFile=null,typingTimer=null,quickReactionEmoji="❤️",longPressTriggered=false;
 let restrictedUsers={},mutedUsers={};
 const chatPath=(a,b)=>'chats/'+a+'/'+b;
 function status(t){$('authStatus').textContent=t||''}
@@ -109,25 +108,38 @@ async function handleRegister(){
  const name=$('regName').value.trim(),handle=cleanHandle($('regHandle').value),phone=cleanPhone($('regPhone').value),password=$('regPassword').value,privacy=$('regPrivacy').value;
  if(!name||!handle||!phone||!password)return status('সব ঘর পূরণ করুন।');if(!/^[a-z0-9_]{3,24}$/.test(handle))return status('APCHAT ID ৩-২৪ অক্ষরের হতে হবে।');if(phone.length<7||phone.length>15)return status('সঠিক ফোন নম্বর দিন।');if(password.length<6)return status('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
  $('registerBtn').disabled=true;status('অ্যাকাউন্ট তৈরি হচ্ছে...');let cred=null,reserved=false;
- try{cred=await auth.createUserWithEmailAndPassword(phoneEmail(phone),password);const tx=await db.ref('handles/'+handle).transaction(v=>v===null?cred.user.uid:undefined);if(!tx.committed)throw Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে।');reserved=true;const profile={uid:cred.user.uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};await db.ref().update({['profiles/'+cred.user.uid]:profile,['profileDirectory/'+cred.user.uid]:{uid:cred.user.uid,name,handle,privacy,bio:'Using APCHAT',createdAt:Date.now()}});currentUser=profile;showApp();status('')}
- catch(e){if(reserved&&cred?.user)await db.ref('handles/'+handle).remove().catch(()=>{});if(cred?.user)await cred.user.delete().catch(()=>{});currentUser=null;showAuth();status(authError(e))}
- finally{$('registerBtn').disabled=false}
+ try{
+  cred=await auth.createUserWithEmailAndPassword(phoneEmail(phone),password);
+  const tx=await db.ref('handles/'+handle).transaction(v=>v===null?cred.user.uid:undefined);
+  if(!tx.committed)throw Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে।');
+  reserved=true;
+  const profile={uid:cred.user.uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};
+  await db.ref().update({
+    ['profiles/'+cred.user.uid]:profile,
+    ['profileDirectory/'+cred.user.uid]:{uid:cred.user.uid,name,handle,privacy,bio:'Using APCHAT',createdAt:Date.now()}
+  });
+  currentUser=profile; showApp(); status('');
+ }catch(e){
+  if(reserved&&cred?.user)await db.ref('handles/'+handle).remove().catch(()=>{});
+  if(cred?.user)await cred.user.delete().catch(()=>{});
+  currentUser=null; showAuth(); status(authError(e));
+ }finally{$('registerBtn').disabled=false}
 }
 async function handleLogin(){
-  if(!auth || !db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
-  const phone = cleanPhone($('loginPhone').value), password = $('loginPassword').value;
-  if(!phone || !password)return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');
-  const loginBtn = $('loginBtn'); loginBtn.disabled = true; status('লগইন হচ্ছে...');
+  if(!auth||!db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
+  const phone=cleanPhone($('loginPhone').value), password=$('loginPassword').value;
+  if(!phone||!password)return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');
+  const loginBtn=$('loginBtn'); loginBtn.disabled=true; status('লগইন হচ্ছে...');
   try{
-    const credential = await auth.signInWithEmailAndPassword(phoneEmail(phone), password);
-    const user = credential.user;
-    const profileSnap = await db.ref('profiles/' + user.uid).once('value');
+    const credential=await auth.signInWithEmailAndPassword(phoneEmail(phone), password);
+    const user=credential.user;
+    const profileSnap=await db.ref('profiles/'+user.uid).once('value');
     if(!profileSnap.exists()){await auth.signOut(); status('Profile পাওয়া যায়নি।'); return;}
-    currentUser = profileSnap.val();
-    currentUser.uid = currentUser.uid || user.uid;
+    currentUser=profileSnap.val();
+    currentUser.uid=currentUser.uid||user.uid;
     status(''); showApp();
   }catch(e){console.error('Login error:', e); status(authError(e));}
-  finally{loginBtn.disabled = false;}
+  finally{loginBtn.disabled=false;}
 }
 window.switchAuthView=switchAuthView; window.handleLogin=handleLogin; window.handleRegister=handleRegister;
 document.addEventListener('DOMContentLoaded',()=>{const registerBtn=document.getElementById('registerBtn');if(registerBtn) registerBtn.addEventListener('click',e=>{e.preventDefault();handleRegister();});});
@@ -142,16 +154,23 @@ async function logout(){
 function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
 function startListeners(){
   if(!currentUser||listenersStarted)return; listenersStarted=true;
+  
   watch('profiles',v=>{
-    const normalized={};
-    Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')normalized[uid]={...p,uid:p.uid||uid};});
-    allUsers=normalized;
+    allUsers={};
+    Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')allUsers[uid]={...p,uid:p.uid||uid};});
     db.ref('profileDirectory').once('value').then(ds=>{
       Object.entries(ds.val()||{}).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
       renderUI(); renderStoryFriendChoices();
     }).catch(()=>{renderUI(); renderStoryFriendChoices()});
     renderUI(); renderStoryFriendChoices();
   });
+  
+  watch('profileDirectory',ds=>{
+    const dir=ds.val()||{};
+    Object.entries(dir).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
+    renderUI();
+  });
+
   watch('friends/'+currentUser.uid,v=>{friendships=v; renderUI(); renderStoryFriendChoices(); loadStories()});
   watch('chatAccess/'+currentUser.uid,v=>{chatAccess=v; renderUI()});
   watch('friendRequests/'+currentUser.uid,v=>{incomingRequests=v; renderUI()});
@@ -169,7 +188,7 @@ function formatLastSeen(ts){if(!ts)return '';const d=Math.max(0,Date.now()-ts),m
 function attachIncomingNotifications(){if(!currentUser)return;notificationListeners.forEach(x=>db.ref(x.path).off('child_added',x.cb));notificationListeners=[];Object.entries(friendships||{}).filter(([,v])=>v==='accepted').forEach(([uid])=>{const path=chatPath(currentUser.uid,uid);let initial=true;const cb=snap=>{if(initial)return;const m=snap.val();if(!m||m.sender===currentUser.uid||mutedUsers[uid])return;notifyUser((allUsers[uid]?.name||'APCHAT')+': '+(m.text||m.fileName||'New message'));playNotificationSound()};db.ref(path).once('value').then(()=>{initial=false});db.ref(path).on('child_added',cb);notificationListeners.push({path,cb})})}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{o.stop();c.close()},140)}catch(e){}}
 function startPresence(){const ref=db.ref('presence/'+currentUser.uid);ref.onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP});ref.update({online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP})}
-function switchTab(t){['chats','requests','people'].forEach(n=>{$(n+'View').classList.toggle('hidden',n!==t);const b=$('tab'+n[0].toUpperCase()+n.slice(1)+'Btn');b.classList.toggle('text-blue-400',n===t);b.classList.toggle('text-gray-400',n!==t)})}
+function switchTab(t){['chats','requests','people'].forEach(n=>{$(n+'View').classList.toggle('hidden',n!==t);const b=$('tab'+n[0].toUpperCase()+n.slice(1)+'Btn');b.classList.toggle('text-blue-400',n===t);b.classList.toggle('text-gray-400',n!==t)});renderUI();}
 function userCard(u,sub=''){const d=document.createElement('div');d.className='flex items-center gap-3 min-w-0';const im=document.createElement('img');im.src=fallback;im.className='w-10 h-10 rounded-full object-cover';if(u.uid&&(u.uid===currentUser.uid||u.privacy!=='private'||friendships[u.uid]==='accepted'))db.ref('profilePhotos/'+u.uid).once('value').then(ps=>{if(ps.val()?.url)im.src=ps.val().url}).catch(()=>{});const tx=document.createElement('span');tx.className='min-w-0';tx.innerHTML='<b class="block text-sm" style="white-space:normal;overflow-wrap:anywhere;line-height:1.25">'+esc(u.name||'User')+'</b><small class="text-gray-400">'+esc(sub||('@'+(u.handle||'')))+'</small>';const uid=u.uid,p=window.presenceData?.[uid];const wrap=document.createElement('div');wrap.className='chat-avatar-wrap';wrap.append(im);if(p?.online){const dot=document.createElement('span');dot.className='chat-presence-dot';wrap.append(dot)}else if(p?.lastSeen){const ls=document.createElement('span');ls.className='chat-lastseen';ls.textContent=formatLastSeen(p.lastSeen);wrap.append(ls)}d.insertBefore(wrap,tx);return d}
 function addEmpty(el,msg){if(!el.children.length){const p=document.createElement('p');p.className='text-xs text-gray-500 p-2';p.textContent=msg;el.append(p)}}
 
@@ -180,11 +199,7 @@ function renderUI(){
   const q=$('searchInput').value.trim().toLowerCase().replace(/^@/,'');
   
   const combinedUsers = {...allUsers};
-  db.ref('profileDirectory').once('value').then(snap=>{
-    const dir = snap.val() || {};
-    Object.entries(dir).forEach(([uid,u])=>{if(!combinedUsers[uid]&&u)combinedUsers[uid]={...u,uid:u.uid||uid};});
-  }).catch(()=>{});
-
+  
   Object.values(combinedUsers).forEach(u=>{
     if(!u?.uid||u.uid===currentUser.uid||blockedUsers[u.uid])return;
     const n=String(u.name||''),h=String(u.handle||'');
@@ -196,12 +211,14 @@ function renderUI(){
       db.ref('nicknames/'+currentUser.uid+'/'+u.uid).once('value').then(ns=>{if(ns.val()){const title=b.querySelector('b');if(title)title.textContent=ns.val();}});
       chats.append(b);
     }
+    
     if(incomingRequests[u.uid]){
       const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u));
       const actions=document.createElement('div');actions.className='flex gap-1';
       [['Accept','bg-green-600',()=>acceptFriendReq(u.uid)],['Reject','bg-gray-600',()=>rejectFriendReq(u.uid)]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' px-2 py-2 rounded-lg text-xs';x.onclick=fn;actions.append(x)});
       b.append(actions);req.append(b);
     }
+    
     if(messageRequests[u.uid]?.status==='pending'){
       const b=document.createElement('div');b.className='p-3 bg-gray-800 rounded-xl space-y-2';b.append(userCard(u,'@'+(u.handle||'')+' · Message request'));
       const p=document.createElement('p');p.className='text-sm break-words';p.textContent=messageRequests[u.uid].text||'Message request';b.append(p);
@@ -209,10 +226,12 @@ function renderUI(){
       [['Accept','bg-green-600',()=>acceptMessageRequest(u.uid)],['Block','bg-red-700',()=>denyMessageRequest(u.uid,'blocked')],['Delete','bg-gray-600',()=>denyMessageRequest(u.uid,'deleted')]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' flex-1 py-2 rounded-lg text-xs';x.onclick=fn;a.append(x)});
       b.append(a);msgs.append(b);
     }
+    
     if(sentRequests[u.uid]){
       const b=document.createElement('div');b.className='flex items-center justify-between p-2 bg-gray-800 rounded-xl';b.append(userCard(u,'Friend request sent'));
       const x=document.createElement('button');x.textContent='Cancel';x.className='text-xs bg-gray-600 px-3 py-2 rounded';x.onclick=()=>cancelFriendReq(u.uid);b.append(x);sent.append(b);
     }
+    
     if(friendships[u.uid]!=='accepted'&&!incomingRequests[u.uid]&&!sentRequests[u.uid]&&messageRequests[u.uid]?.status!=='pending'){
       const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u,'@'+(u.handle||'')+' · '+(u.privacy==='private'?'Private':'Public')));
       const canFriendRequest=u.privacy!=='private'||friendRequestAllowed[u.uid]===true;const x=document.createElement('button');
@@ -220,6 +239,7 @@ function renderUI(){
       x.onclick=()=>canFriendRequest?sendFriendReq(u.uid):sendMessageRequest(u.uid);b.append(x);people.append(b);
     }
   });
+  
   addEmpty(chats,'No accepted friends yet.'); addEmpty(req,'No incoming friend requests.'); addEmpty(msgs,'No message requests.'); addEmpty(sent,'No sent requests.'); addEmpty(people,'No users found.');
   const count=Object.keys(incomingRequests).length+Object.values(messageRequests).filter(x=>x?.status==='pending').length; $('requestBadge').textContent=count?'('+count+')':'';
 }
@@ -338,7 +358,6 @@ async function savePrivacySettings(){
   }
 }
 
-/* Privacy Lists Management (Blocked, Restricted, Muted & Photo Loves) */
 async function showPrivacyList(type){
   const listEl=$('privacyAccountList'); listEl.innerHTML='<p class="text-xs text-gray-400">Loading...</p>';
   try{
@@ -374,7 +393,7 @@ async function showMyPhotoLoves(){
     const uids=Object.keys(data);
     listEl.innerHTML='';
     if(uids.length===0){
-      listEl.innerHTML='<p class="text-xs text-gray-400"> কেউ এখনো আপনার প্রোফাইল পিকচারে লাভ রিয়্যাক্ট দেয়নি।</p>';
+      listEl.innerHTML='<p class="text-xs text-gray-400">কেউ এখনো আপনার প্রোফাইল পিকচারে লাভ রিয়্যাক্ট দেয়নি।</p>';
       return;
     }
     uids.forEach(async reactorId=>{
@@ -398,7 +417,6 @@ function showUserProfile(uid){
     $('userProfilePhoto').src=fallback;
     db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(ps.val()?.url)$('userProfilePhoto').src=ps.val().url});
     
-    // Check if viewing someone else's profile photo -> add love button option if public or friend
     let loveDiv=$('userProfileModal').querySelector('#profileLoveAction');
     if(!loveDiv){
       loveDiv=document.createElement('div'); loveDiv.id='profileLoveAction'; loveDiv.className='mt-3';
@@ -418,7 +436,6 @@ function showUserProfile(uid){
 }
 function closeUserProfile(){$('userProfileModal').classList.add('hidden')}
 
-/* Stories & Viewers list fully restored */
 async function uploadStory(file){
   if(!file)return;
   try{
