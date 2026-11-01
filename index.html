@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#030712">
-<title>APCHAT — Global Messenger (v12)</title>
+<title>APCHAT — Global Messenger</title>
 <link rel="manifest" href="./manifest.json">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -76,17 +76,10 @@
 <div id="privacyModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"><div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-3"><h3 class="font-bold text-lg">Account Settings</h3><label class="text-xs text-gray-400">Account privacy</label><select id="privacySelect" class="w-full bg-gray-800 p-3 rounded-xl text-sm"><option value="public">Public</option><option value="private">Private</option></select><div class="flex justify-end gap-2"><button onclick="closePrivacyModal()" class="px-4 py-2 bg-gray-700 rounded-lg text-sm">Cancel</button><button onclick="savePrivacySettings()" class="px-4 py-2 brand rounded-lg text-sm">Save</button></div><hr class="border-gray-700"><h4 class="font-bold">Privacy</h4><div class="grid grid-cols-3 gap-2 text-xs"><button onclick="showPrivacyList('blocked')" class="bg-gray-800 rounded-lg p-2">Blocked<br>Accounts</button><button onclick="showPrivacyList('restricted')" class="bg-gray-800 rounded-lg p-2">Restricted<br>Accounts</button><button onclick="showPrivacyList('muted')" class="bg-gray-800 rounded-lg p-2">Muted<br>Accounts</button></div><button onclick="showMyPhotoLoves()" class="w-full bg-pink-900/50 rounded-lg p-2 text-sm">❤️ My Profile Photo Loves</button><div id="privacyAccountList" class="max-h-40 overflow-y-auto space-y-2 text-sm"></div></div></div>
 <div id="storyPrivacyModal" class="hidden fixed inset-0 bg-black/80 z-[1200] flex items-center justify-center p-4 overflow-y-auto"><div class="bg-gray-900 border border-gray-700 rounded-2xl p-5 w-full max-w-md my-auto space-y-3"><div class="flex justify-between items-center"><h3 class="font-bold text-lg">Story Privacy</h3><button onclick="cancelStory()" class="text-gray-400 text-2xl">×</button></div><div id="storyPreview" class="text-xs text-gray-300">Story preview</div><div class="rounded-xl border border-gray-700 p-3 space-y-2"><b class="text-sm">🎵 APCHAT Original Music</b><select id="storyMusic" class="w-full bg-gray-800 p-2 rounded-lg text-sm"><option value="none">No music</option><option value="calm">Calm Piano (original)</option><option value="dream">Dream Bells (original)</option><option value="energy">Soft Energy (original)</option></select><label class="text-xs text-gray-400">Music duration: <span id="musicDurationLabel">15</span> seconds</label><input id="musicDuration" type="range" min="1" max="60" value="15" class="w-full" oninput="$('musicDurationLabel').textContent=this.value"></div><p class="text-xs text-gray-400">কে আপনার Story দেখতে পারবে?</p><label class="privacy-choice"><input type="radio" name="storyPrivacy" value="public" checked onchange="privacyChanged()"><span><b class="block text-sm">Public</b><small class="text-gray-400">সবাই দেখতে পারবে</small></span></label><label class="privacy-choice"><input type="radio" name="storyPrivacy" value="friends" onchange="privacyChanged()"><span><b class="block text-sm">Only Friends</b><small class="text-gray-400">শুধু Accepted Friends</small></span></label><label class="privacy-choice"><input type="radio" name="storyPrivacy" value="custom" onchange="privacyChanged()"><span><b class="block text-sm">Custom Friends</b><small class="text-gray-400">নির্বাচিত বন্ধুরা</small></span></label><label class="privacy-choice"><input type="radio" name="storyPrivacy" value="hide" onchange="privacyChanged()"><span><b class="block text-sm">Hide From</b><small class="text-gray-400">নির্বাচিত বন্ধুরা দেখতে পারবে না</small></span></label><div id="storyAudienceWrap" class="hidden border border-gray-700 rounded-xl p-3"><div class="flex justify-between items-center mb-2"><b id="storyAudienceTitle" class="text-sm">Select friends</b><button onclick="toggleAllStoryFriends()" class="text-xs text-blue-400">Select all</button></div><input id="storyFriendSearch" oninput="renderStoryFriendChoices()" placeholder="বন্ধুর নাম বা @ID খুঁজুন" class="w-full bg-gray-800 p-2 rounded-lg text-sm mb-2"><div id="storyFriendChoices" class="max-h-48 overflow-y-auto space-y-2"></div><p id="storyFriendCount" class="text-xs text-gray-400 mt-2"></p></div><p class="text-[11px] text-amber-300">Story privacy Firebase Rules-এও সুরক্ষিত করতে হবে।</p><div class="flex gap-2"><button onclick="cancelStory()" class="flex-1 py-3 bg-gray-700 rounded-xl">Cancel</button><button id="postStoryBtn" onclick="postStory()" class="flex-1 py-3 brand rounded-xl font-bold">Post Story</button></div></div></div>
 <div id="mediaViewer" class="hidden" onclick="if(event.target===this)closeMediaViewer()"><button id="mediaViewerClose" onclick="closeMediaViewer()" aria-label="Close media">×</button><div id="mediaViewerStage" class="w-full h-full flex items-center justify-center"></div></div>
-<div id="storyModal" class="hidden" onclick="if(event.target===this)closeStory()"><div id="storyCard"><div class="flex justify-between items-center mb-3"><div><b id="storyOwnerName"></b><p id="storyOwnerHandle" class="text-xs text-gray-400"></p></div><button onclick="closeStory()" class="text-2xl text-gray-400">×</button></div><div id="storyMediaWrap" class="text-center"></div><div id="storyMusicWrap" class="mt-2"></div><div id="storyReactionArea" class="mt-4 border-t border-gray-700 pt-3"><p class="text-sm font-bold mb-2">React to this story</p><div class="flex flex-wrap gap-3 text-2xl" id="storyEmojiButtons"></div></div><div id="storyOwnerReactionPanel" class="hidden mt-4 border-t border-gray-700 pt-3"><div class="flex justify-between items-center gap-2"><b class="text-sm">Story reactions</b><span id="storyReactionTotal" class="text-xs text-blue-300"></span></div><div id="storyReactionSummary" class="flex flex-wrap gap-2 my-3"></div><div id="storyReactionPeople" class="space-y-2"></div></div></div></div>
+<div id="storyModal" class="hidden" onclick="if(event.target===this)closeStory()"><div id="storyCard"><div class="flex justify-between items-center mb-3"><div><b id="storyOwnerName"></b><p id="storyOwnerHandle" class="text-xs text-gray-400"></p></div><button onclick="closeStory()" class="text-2xl text-gray-400">×</button></div><div id="storyMediaWrap" class="text-center"></div><div id="storyMusicWrap" class="mt-2"></div><div id="storyReactionArea" class="mt-4 border-t border-gray-700 pt-3"><p class="text-sm font-bold mb-2">React to this story</p><div class="flex flex-wrap gap-3 text-2xl" id="storyEmojiButtons"></div></div><div id="storyOwnerReactionPanel" class="hidden mt-4 border-t border-gray-700 pt-3"><div class="flex justify-between items-center gap-2"><b class="text-sm">Story viewers & reactions</b><span id="storyReactionTotal" class="text-xs text-blue-300"></span></div><div id="storyReactionSummary" class="flex flex-wrap gap-2 my-3"></div><div id="storyReactionPeople" class="space-y-2"></div></div></div></div>
 <input id="fileInput" type="file" hidden onchange="sendGenericFile(this.files[0])"><input id="themeInput" type="file" accept="image/*" hidden onchange="uploadChatTheme(this.files[0])"><input id="photoInput" type="file" accept="image/*" hidden onchange="uploadPhoto(this.files[0])"><input id="storyInput" type="file" accept="image/*,video/*" hidden onchange="uploadStory(this.files[0])"><input id="imageInput" type="file" accept="image/*" hidden onchange="sendMedia(this.files[0],'image')"><input id="videoInput" type="file" accept="video/*" hidden onchange="sendMedia(this.files[0],'video')">
 <script>
-/* APCHAT FRONTEND REWRITE
-   Existing Firebase paths are retained where practical. New paths:
-   messageRequests/{receiverUid}/{senderUid}
-   friendRequestAllowed/{senderUid}/{ownerUid}
-   friendRequestDenied/{receiverUid}/{senderUid}
-   typing/{chatOwnerUid}/{peerUid}/{uid}
-   Presence: presence/{uid}
-*/
+/* APCHAT FRONTEND REWRITE - FIXED & RESTORED */
 const firebaseConfig={apiKey:"AIzaSyD7ZgOGN87vLRu0-BKaAm5e5c8CKbFWiYs",authDomain:"apchat-app.firebaseapp.com",databaseURL:"https://apchat-app-default-rtdb.firebaseio.com",projectId:"apchat-app",storageBucket:"apchat-app.firebasestorage.app",messagingSenderId:"1089476474245",appId:"1:1089476474245:web:ac8fc99012b09ad58540ec",measurementId:"G-5H1JWCGWN8"};
 let auth,db;
 try{
@@ -98,8 +91,8 @@ try{
 const CLOUDINARY_CLOUD_NAME="yio4kivy",CLOUDINARY_UPLOAD_PRESET="apchat_unsigned";
 const $=id=>document.getElementById(id),fallback='https://ui-avatars.com/api/?background=1d4ed8&color=fff&name=AP';
 let currentUser=null,activeChatUserId=null,allUsers={},friendships={},chatAccess={},incomingRequests={},sentRequests={},messageRequests={},friendRequestAllowed={},blockedUsers={},messageRecords={};
-let rootListeners=[],chatListeners=[],listenersStarted=false,storyReactionListener=null,storyReactionPath=null,activeStory=null,notificationListeners=[],notificationReady=false;
-let pendingStoryFile=null,selectedStoryFriends=new Set(),mediaRecorder=null,recordedChunks=[],recordingStream=null,recordingCancelled=false,replyTo=null,typingTimer=null,chatSettingsListener=null,chatSettingsPath=null,quickReactionEmoji="❤️",longPressTimer=null,longPressTriggered=false;
+let rootListeners=[],chatListeners=[],listenersStarted=false,storyReactionListener=null,storyReactionPath=null,activeStory=null,notificationListeners=[];
+let pendingStoryFile=null,selectedStoryFriends=new Set(),mediaRecorder=null,recordedChunks=[],recordingStream=null,recordingCancelled=false,replyTo=null,typingTimer=null,chatSettingsListener=null,chatSettingsPath=null,quickReactionEmoji="❤️",longPressTriggered=false;
 let restrictedUsers={},mutedUsers={};
 const chatPath=(a,b)=>'chats/'+a+'/'+b;
 function status(t){$('authStatus').textContent=t||''}
@@ -120,97 +113,53 @@ async function handleRegister(){
  catch(e){if(reserved&&cred?.user)await db.ref('handles/'+handle).remove().catch(()=>{});if(cred?.user)await cred.user.delete().catch(()=>{});currentUser=null;showAuth();status(authError(e))}
  finally{$('registerBtn').disabled=false}
 }
- async function handleLogin(){
-  if(!auth || !db){
-    return status(
-      window.__firebaseInitError?.message ||
-      'Firebase ready হয়নি।'
-    );
-  }
-
-  const phone = cleanPhone($('loginPhone').value);
-  const password = $('loginPassword').value;
-
-  if(!phone || !password){
-    return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');
-  }
-
-  const loginBtn = $('loginBtn');
-  loginBtn.disabled = true;
-  status('লগইন হচ্ছে...');
-
+async function handleLogin(){
+  if(!auth || !db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
+  const phone = cleanPhone($('loginPhone').value), password = $('loginPassword').value;
+  if(!phone || !password)return status('ফোন নম্বর ও পাসওয়ার্ড দিন।');
+  const loginBtn = $('loginBtn'); loginBtn.disabled = true; status('লগইন হচ্ছে...');
   try{
-    const credential = await auth.signInWithEmailAndPassword(
-      phoneEmail(phone),
-      password
-    );
-
+    const credential = await auth.signInWithEmailAndPassword(phoneEmail(phone), password);
     const user = credential.user;
-
-    const profileSnap = await db.ref(
-      'profiles/' + user.uid
-    ).once('value');
-
-    if(!profileSnap.exists()){
-      await auth.signOut();
-      status('Profile পাওয়া যায়নি।');
-      return;
-    }
-
+    const profileSnap = await db.ref('profiles/' + user.uid).once('value');
+    if(!profileSnap.exists()){await auth.signOut(); status('Profile পাওয়া যায়নি।'); return;}
     currentUser = profileSnap.val();
-
-    // নিশ্চিত করা হচ্ছে UID আছে
     currentUser.uid = currentUser.uid || user.uid;
-
-    status('');
-    showApp();
-
-  }catch(e){
-    console.error('Login error:', e);
-    status(authError(e));
-  }finally{
-    loginBtn.disabled = false;
-  }
+    status(''); showApp();
+  }catch(e){console.error('Login error:', e); status(authError(e));}
+  finally{loginBtn.disabled = false;}
 }
-// Keep authentication controls available even if a later optional Messenger feature fails.
 window.switchAuthView=switchAuthView; window.handleLogin=handleLogin; window.handleRegister=handleRegister;
-window.addEventListener('error',e=>{const box=document.getElementById('authStatus'); if(box && !document.getElementById('authScreen').classList.contains('hidden')) box.textContent='App error: '+(e.message||'Unknown error');});
-document.addEventListener('DOMContentLoaded',()=>{
- const loginBtn=document.getElementById('loginBtn'), registerBtn=document.getElementById('registerBtn');
- 
- if(registerBtn) registerBtn.addEventListener('click',e=>{e.preventDefault();handleRegister();});
-});
+document.addEventListener('DOMContentLoaded',()=>{const registerBtn=document.getElementById('registerBtn');if(registerBtn) registerBtn.addEventListener('click',e=>{e.preventDefault();handleRegister();});});
 function detach(path,cb,event='value'){db.ref(path).off(event,cb)}
 function stopListeners(){rootListeners.forEach(x=>detach(x.path,x.cb,x.event||'value'));rootListeners=[];chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];listenersStarted=false;if(currentUser){db.ref('presence/'+currentUser.uid).onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('presence/'+currentUser.uid).update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('typing').child(currentUser.uid).child(activeChatUserId||'_').child(currentUser.uid).remove().catch(()=>{})}}
 async function logout(){if(!confirm('লগআউট করবেন?'))return;stopListeners();await auth.signOut()}
-function watch(path,handler){const ref=db.ref(path);const cb=s=>handler(s.val()||{});const error=e=>{console.error('APCHAT listener failed:',path,e);const box=$('authStatus');if(box&&!$('authScreen').classList.contains('hidden'))box.textContent='Firebase data load failed ('+path+'): '+(e.code||e.message||'Unknown error');};ref.on('value',cb,error);rootListeners.push({path,cb})}
-function startListeners(){if(!currentUser||listenersStarted)return;listenersStarted=true;
- watch('profiles',v=>{
-  // Backward-compatible source of truth: existing APCHAT accounts and friends live here.
-  const normalized={};
-  Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')normalized[uid]={...p,uid:p.uid||uid};});
-  allUsers=normalized;
-  // Merge newer directory-only entries without replacing existing profile records.
-  db.ref('profileDirectory').once('value').then(ds=>{
-    Object.entries(ds.val()||{}).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
-    renderUI();renderStoryFriendChoices();
-  }).catch(()=>{renderUI();renderStoryFriendChoices()});
-  renderUI();renderStoryFriendChoices();
- });
- watch('friends/'+currentUser.uid,v=>{friendships=v;renderUI();renderStoryFriendChoices();loadStories()});
- watch('chatAccess/'+currentUser.uid,v=>{chatAccess=v;renderUI()});
- watch('friendRequests/'+currentUser.uid,v=>{incomingRequests=v;renderUI()});
- watch('friendRequestsSent/'+currentUser.uid,v=>{sentRequests=v;renderUI()});
- watch('messageRequests/'+currentUser.uid,v=>{messageRequests=v;renderUI();syncAcceptedMessageChats(v)});
- watch('friendRequestAllowed/'+currentUser.uid,v=>{friendRequestAllowed=v;renderUI()});
- watch('blocked/'+currentUser.uid,v=>{blockedUsers=v;renderUI()});
- watch('restricted/'+currentUser.uid,v=>{restrictedUsers=v;renderUI()});
- watch('muted/'+currentUser.uid,v=>{mutedUsers=v;renderUI();attachIncomingNotifications()});
- watch('presence',v=>{window.presenceData=v||{};renderUI()});
- setTimeout(attachIncomingNotifications,800);
+function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
+function startListeners(){
+  if(!currentUser||listenersStarted)return; listenersStarted=true;
+  watch('profiles',v=>{
+    const normalized={};
+    Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')normalized[uid]={...p,uid:p.uid||uid};});
+    allUsers=normalized;
+    db.ref('profileDirectory').once('value').then(ds=>{
+      Object.entries(ds.val()||{}).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
+      renderUI(); renderStoryFriendChoices();
+    }).catch(()=>{renderUI(); renderStoryFriendChoices()});
+    renderUI(); renderStoryFriendChoices();
+  });
+  watch('friends/'+currentUser.uid,v=>{friendships=v; renderUI(); renderStoryFriendChoices(); loadStories()});
+  watch('chatAccess/'+currentUser.uid,v=>{chatAccess=v; renderUI()});
+  watch('friendRequests/'+currentUser.uid,v=>{incomingRequests=v; renderUI()});
+  watch('friendRequestsSent/'+currentUser.uid,v=>{sentRequests=v; renderUI()});
+  watch('messageRequests/'+currentUser.uid,v=>{messageRequests=v; renderUI(); syncAcceptedMessageChats(v)});
+  watch('friendRequestAllowed/'+currentUser.uid,v=>{friendRequestAllowed=v; renderUI()});
+  watch('blocked/'+currentUser.uid,v=>{blockedUsers=v; renderUI()});
+  watch('restricted/'+currentUser.uid,v=>{restrictedUsers=v; renderUI()});
+  watch('muted/'+currentUser.uid,v=>{mutedUsers=v; renderUI(); attachIncomingNotifications()});
+  watch('presence',v=>{window.presenceData=v||{}; renderUI()});
+  setTimeout(attachIncomingNotifications,800);
 }
-function syncAcceptedMessageChats(requests){Object.entries(requests||{}).forEach(([peer,request])=>{if(request?.status!=='accepted'||chatAccess[peer]===true)return;const updates={};updates['chatAccess/'+currentUser.uid+'/'+peer]=true;updates['chatAccess/'+peer+'/'+currentUser.uid]=true;db.ref().update(updates).catch(e=>console.error('Accepted Message Request chat sync failed:',e.message))})}
-
+function syncAcceptedMessageChats(requests){Object.entries(requests||{}).forEach(([peer,request])=>{if(request?.status!=='accepted'||chatAccess[peer]===true)return;const updates={};updates['chatAccess/'+currentUser.uid+'/'+peer]=true;updates['chatAccess/'+peer+'/'+currentUser.uid]=true;db.ref().update(updates).catch(e=>console.error(e))})}
 function formatLastSeen(ts){if(!ts)return '';const d=Math.max(0,Date.now()-ts),m=Math.floor(d/60000);if(m<1)return 'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d'}
 function attachIncomingNotifications(){if(!currentUser)return;notificationListeners.forEach(x=>db.ref(x.path).off('child_added',x.cb));notificationListeners=[];Object.entries(friendships||{}).filter(([,v])=>v==='accepted').forEach(([uid])=>{const path=chatPath(currentUser.uid,uid);let initial=true;const cb=snap=>{if(initial)return;const m=snap.val();if(!m||m.sender===currentUser.uid||mutedUsers[uid])return;notifyUser((allUsers[uid]?.name||'APCHAT')+': '+(m.text||m.fileName||'New message'));playNotificationSound()};db.ref(path).once('value').then(()=>{initial=false});db.ref(path).on('child_added',cb);notificationListeners.push({path,cb})})}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{o.stop();c.close()},140)}catch(e){}}
@@ -218,1511 +167,286 @@ function startPresence(){const ref=db.ref('presence/'+currentUser.uid);ref.onDis
 function switchTab(t){['chats','requests','people'].forEach(n=>{$(n+'View').classList.toggle('hidden',n!==t);const b=$('tab'+n[0].toUpperCase()+n.slice(1)+'Btn');b.classList.toggle('text-blue-400',n===t);b.classList.toggle('text-gray-400',n!==t)})}
 function userCard(u,sub=''){const d=document.createElement('div');d.className='flex items-center gap-3 min-w-0';const im=document.createElement('img');im.src=fallback;im.className='w-10 h-10 rounded-full object-cover';if(u.uid&&(u.uid===currentUser.uid||u.privacy!=='private'||friendships[u.uid]==='accepted'))db.ref('profilePhotos/'+u.uid).once('value').then(ps=>{if(ps.val()?.url)im.src=ps.val().url}).catch(()=>{});const tx=document.createElement('span');tx.className='min-w-0';tx.innerHTML='<b class="block text-sm" style="white-space:normal;overflow-wrap:anywhere;line-height:1.25">'+esc(u.name||'User')+'</b><small class="text-gray-400">'+esc(sub||('@'+(u.handle||'')))+'</small>';const uid=u.uid,p=window.presenceData?.[uid];const wrap=document.createElement('div');wrap.className='chat-avatar-wrap';wrap.append(im);if(p?.online){const dot=document.createElement('span');dot.className='chat-presence-dot';wrap.append(dot)}else if(p?.lastSeen){const ls=document.createElement('span');ls.className='chat-lastseen';ls.textContent=formatLastSeen(p.lastSeen);wrap.append(ls)}d.insertBefore(wrap,tx);return d}
 function addEmpty(el,msg){if(!el.children.length){const p=document.createElement('p');p.className='text-xs text-gray-500 p-2';p.textContent=msg;el.append(p)}}
-function renderUI(){if(!currentUser)return;const chats=$('chatsView'),req=$('friendRequestsList'),msgs=$('messageRequestsList'),sent=$('sentRequestsList'),people=$('peopleView');[chats,req,msgs,sent,people].forEach(x=>x.innerHTML='');const q=$('searchInput').value.trim().toLowerCase().replace(/^@/,'');
- Object.values(allUsers).forEach(u=>{if(!u?.uid||u.uid===currentUser.uid||blockedUsers[u.uid])return;const n=String(u.name||''),h=String(u.handle||'');if(q&&!n.toLowerCase().includes(q)&&!h.toLowerCase().includes(q))return;
- if(friendships[u.uid]==='accepted'||chatAccess[u.uid]===true){const b=document.createElement('button');b.className='w-full text-left flex items-center gap-3 p-3 border-b border-gray-800';b.append(userCard(u,mutedUsers[u.uid]?'Muted':'Chat'));b.type='button';b.setAttribute('aria-label','Open chat with '+(u.name||'User'));b.onclick=(ev)=>{ev.preventDefault();if(!longPressTriggered)openChat(u.uid);longPressTriggered=false};bindChatLongPress(b,u.uid);const nick=db.ref('nicknames/'+currentUser.uid+'/'+u.uid);nick.once('value').then(ns=>{if(ns.val()){const title=b.querySelector('b');if(title)title.textContent=ns.val();const sub=b.querySelector('small');if(sub)sub.textContent=mutedUsers[u.uid]?'Muted':'Chat'}});chats.append(b)}
- if(incomingRequests[u.uid]){const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u));const actions=document.createElement('div');actions.className='flex gap-1';[['Accept','bg-green-600',()=>acceptFriendReq(u.uid)],['Reject','bg-gray-600',()=>rejectFriendReq(u.uid)]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' px-2 py-2 rounded-lg text-xs';x.onclick=fn;actions.append(x)});b.append(actions);req.append(b)}
- if(messageRequests[u.uid]?.status==='pending'){const b=document.createElement('div');b.className='p-3 bg-gray-800 rounded-xl space-y-2';b.append(userCard(u,'@'+(u.handle||'')+' · Message request'));const p=document.createElement('p');p.className='text-sm break-words';p.textContent=messageRequests[u.uid].text||'Message request';b.append(p);const a=document.createElement('div');a.className='flex gap-2';[['Accept','bg-green-600',()=>acceptMessageRequest(u.uid)],['Block','bg-red-700',()=>denyMessageRequest(u.uid,'blocked')],['Delete','bg-gray-600',()=>denyMessageRequest(u.uid,'deleted')]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' flex-1 py-2 rounded-lg text-xs';x.onclick=fn;a.append(x)});b.append(a);msgs.append(b)}
- if(sentRequests[u.uid]){const b=document.createElement('div');b.className='flex items-center justify-between p-2 bg-gray-800 rounded-xl';b.append(userCard(u,'Friend request sent'));const x=document.createElement('button');x.textContent='Cancel';x.className='text-xs bg-gray-600 px-3 py-2 rounded';x.onclick=()=>cancelFriendReq(u.uid);b.append(x);sent.append(b)}
- if(friendships[u.uid]!=='accepted'&&!incomingRequests[u.uid]&&!sentRequests[u.uid]&&messageRequests[u.uid]?.status!=='pending'){const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u,'@'+(u.handle||'')+' · '+(u.privacy==='private'?'Private':'Public')));const canFriendRequest=u.privacy!=='private'||friendRequestAllowed[u.uid]===true;const x=document.createElement('button');x.className='px-3 py-2 rounded-lg text-xs '+(canFriendRequest?'bg-blue-600':'bg-purple-700');x.textContent=canFriendRequest?'Add Friend':'Message Request';x.onclick=()=>canFriendRequest?sendFriendReq(u.uid):sendMessageRequest(u.uid);b.append(x);people.append(b)}
- });
- addEmpty(chats,'No accepted friends yet.');addEmpty(req,'No incoming friend requests.');addEmpty(msgs,'No message requests.');addEmpty(sent,'No sent requests.');addEmpty(people,'No users found.');
- const count=Object.keys(incomingRequests).length+Object.values(messageRequests).filter(x=>x?.status==='pending').length;$('requestBadge').textContent=count?'('+count+')':'';
+
+function renderUI(){
+  if(!currentUser)return;
+  const chats=$('chatsView'),req=$('friendRequestsList'),msgs=$('messageRequestsList'),sent=$('sentRequestsList'),people=$('peopleView');
+  [chats,req,msgs,sent,people].forEach(x=>x.innerHTML='');
+  const q=$('searchInput').value.trim().toLowerCase().replace(/^@/,'');
+  
+  // Combine all users from allUsers and profileDirectory for Discover
+  const combinedUsers = {...allUsers};
+  db.ref('profileDirectory').once('value').then(snap=>{
+    const dir = snap.val() || {};
+    Object.entries(dir).forEach(([uid,u])=>{if(!combinedUsers[uid]&&u)combinedUsers[uid]={...u,uid:u.uid||uid};});
+  }).catch(()=>{});
+
+  Object.values(combinedUsers).forEach(u=>{
+    if(!u?.uid||u.uid===currentUser.uid||blockedUsers[u.uid])return;
+    const n=String(u.name||''),h=String(u.handle||'');
+    if(q&&!n.toLowerCase().includes(q)&&!h.toLowerCase().includes(q))return;
+    
+    if(friendships[u.uid]==='accepted'||chatAccess[u.uid]===true){
+      const b=document.createElement('button');b.className='w-full text-left flex items-center gap-3 p-3 border-b border-gray-800';
+      b.append(userCard(u,mutedUsers[u.uid]?'Muted':'Chat'));b.type='button';b.onclick=(ev)=>{ev.preventDefault();if(!longPressTriggered)openChat(u.uid);longPressTriggered=false};
+      db.ref('nicknames/'+currentUser.uid+'/'+u.uid).once('value').then(ns=>{if(ns.val()){const title=b.querySelector('b');if(title)title.textContent=ns.val();}});
+      chats.append(b);
+    }
+    if(incomingRequests[u.uid]){
+      const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u));
+      const actions=document.createElement('div');actions.className='flex gap-1';
+      [['Accept','bg-green-600',()=>acceptFriendReq(u.uid)],['Reject','bg-gray-600',()=>rejectFriendReq(u.uid)]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' px-2 py-2 rounded-lg text-xs';x.onclick=fn;actions.append(x)});
+      b.append(actions);req.append(b);
+    }
+    if(messageRequests[u.uid]?.status==='pending'){
+      const b=document.createElement('div');b.className='p-3 bg-gray-800 rounded-xl space-y-2';b.append(userCard(u,'@'+(u.handle||'')+' · Message request'));
+      const p=document.createElement('p');p.className='text-sm break-words';p.textContent=messageRequests[u.uid].text||'Message request';b.append(p);
+      const a=document.createElement('div');a.className='flex gap-2';
+      [['Accept','bg-green-600',()=>acceptMessageRequest(u.uid)],['Block','bg-red-700',()=>denyMessageRequest(u.uid,'blocked')],['Delete','bg-gray-600',()=>denyMessageRequest(u.uid,'deleted')]].forEach(([t,c,fn])=>{const x=document.createElement('button');x.textContent=t;x.className=c+' flex-1 py-2 rounded-lg text-xs';x.onclick=fn;a.append(x)});
+      b.append(a);msgs.append(b);
+    }
+    if(sentRequests[u.uid]){
+      const b=document.createElement('div');b.className='flex items-center justify-between p-2 bg-gray-800 rounded-xl';b.append(userCard(u,'Friend request sent'));
+      const x=document.createElement('button');x.textContent='Cancel';x.className='text-xs bg-gray-600 px-3 py-2 rounded';x.onclick=()=>cancelFriendReq(u.uid);b.append(x);sent.append(b);
+    }
+    if(friendships[u.uid]!=='accepted'&&!incomingRequests[u.uid]&&!sentRequests[u.uid]&&messageRequests[u.uid]?.status!=='pending'){
+      const b=document.createElement('div');b.className='flex items-center justify-between gap-2 p-3 bg-gray-800 rounded-xl';b.append(userCard(u,'@'+(u.handle||'')+' · '+(u.privacy==='private'?'Private':'Public')));
+      const canFriendRequest=u.privacy!=='private'||friendRequestAllowed[u.uid]===true;const x=document.createElement('button');
+      x.className='px-3 py-2 rounded-lg text-xs '+(canFriendRequest?'bg-blue-600':'bg-purple-700');x.textContent=canFriendRequest?'Add Friend':'Message Request';
+      x.onclick=()=>canFriendRequest?sendFriendReq(u.uid):sendMessageRequest(u.uid);b.append(x);people.append(b);
+    }
+  });
+  addEmpty(chats,'No accepted friends yet.'); addEmpty(req,'No incoming friend requests.'); addEmpty(msgs,'No message requests.'); addEmpty(sent,'No sent requests.'); addEmpty(people,'No users found.');
+  const count=Object.keys(incomingRequests).length+Object.values(messageRequests).filter(x=>x?.status==='pending').length; $('requestBadge').textContent=count?'('+count+')':'';
 }
+
 async function sendFriendReq(uid){
- const target=allUsers[uid];
- if(!target)return alert('User পাওয়া যায়নি।');
- if(blockedUsers[uid])return alert('এই ব্যবহারকারীকে আপনি ব্লক করেছেন।');
- if(friendships[uid]==='accepted')return alert('আপনারা ইতিমধ্যে Friend।');
- // A private profile requires an accepted Message Request before a friend request.
- if(target.privacy==='private'){
-  const denied=await db.ref('friendRequestDenied/'+uid+'/'+currentUser.uid).once('value');
-  const allowed=await db.ref('friendRequestAllowed/'+currentUser.uid+'/'+uid).once('value');
-  if(denied.val()!==true&&allowed.val()!==true)return sendMessageRequest(uid);
-  if(denied.val()===true)return sendMessageRequest(uid);
-  // allowed=true means the private account owner accepted this sender's Message Request.
- }
- try{
-  const now=Date.now(),updates={};
-  updates['friendRequests/'+uid+'/'+currentUser.uid]={from:currentUser.uid,status:'pending',createdAt:now};
-  updates['friendRequestsSent/'+currentUser.uid+'/'+uid]={to:uid,status:'pending',createdAt:now};
-  updates['friends/'+currentUser.uid+'/'+uid]='sent';
-  await db.ref().update(updates);
-  notifyUser('Friend request sent');
-  alert('Friend request sent');
- }catch(e){alert('Request failed: '+e.message)}
+  const target=allUsers[uid]; if(!target)return alert('User পাওয়া যায়নি।');
+  if(blockedUsers[uid])return alert('এই ব্যবহারকারীকে আপনি ব্লক করেছেন।');
+  if(friendships[uid]==='accepted')return alert('আপনারা ইতিমধ্যে Friend।');
+  if(target.privacy==='private'){
+    const denied=await db.ref('friendRequestDenied/'+uid+'/'+currentUser.uid).once('value');
+    const allowed=await db.ref('friendRequestAllowed/'+currentUser.uid+'/'+uid).once('value');
+    if(denied.val()!==true&&allowed.val()!==true)return sendMessageRequest(uid);
+    if(denied.val()===true)return sendMessageRequest(uid);
+  }
+  try{
+    const now=Date.now(),updates={};
+    updates['friendRequests/'+uid+'/'+currentUser.uid]={from:currentUser.uid,status:'pending',createdAt:now};
+    updates['friendRequestsSent/'+currentUser.uid+'/'+uid]={to:uid,status:'pending',createdAt:now};
+    updates['friends/'+currentUser.uid+'/'+uid]='sent';
+    await db.ref().update(updates); alert('Friend request sent');
+  }catch(e){alert('Request failed: '+e.message)}
 }
 async function cancelFriendReq(uid){try{const u={};u['friendRequests/'+uid+'/'+currentUser.uid]=null;u['friendRequestsSent/'+currentUser.uid+'/'+uid]=null;u['friends/'+currentUser.uid+'/'+uid]=null;await db.ref().update(u)}catch(e){alert(e.message)}}
 async function acceptFriendReq(uid){try{const u={};u['friends/'+currentUser.uid+'/'+uid]='accepted';u['friends/'+uid+'/'+currentUser.uid]='accepted';u['friendRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestsSent/'+uid+'/'+currentUser.uid]=null;await db.ref().update(u)}catch(e){alert('Accept failed: '+e.message)}}
 async function rejectFriendReq(uid){if(!confirm('Friend request reject করবেন?'))return;try{const u={};u['friendRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestsSent/'+uid+'/'+currentUser.uid]=null;u['friends/'+uid+'/'+currentUser.uid]=null;await db.ref().update(u)}catch(e){alert(e.message)}}
-async function sendMessageRequest(uid){const target=allUsers[uid];if(!target)return;const old=await db.ref('messageRequests/'+uid+'/'+currentUser.uid).once('value');if(old.val()?.status==='pending')return alert('আপনার Message Request আগে থেকেই Pending আছে।');const text=prompt('Message Request-এর সঙ্গে একটি ছোট মেসেজ লিখুন:','হ্যালো! আমি আপনার সঙ্গে যোগাযোগ করতে চাই।');if(text===null)return;if(!text.trim())return alert('মেসেজ লিখুন।');try{await db.ref('messageRequests/'+uid+'/'+currentUser.uid).set({from:currentUser.uid,text:text.trim().slice(0,1000),status:'pending',createdAt:Date.now()});alert('Message Request পাঠানো হয়েছে।')}catch(e){alert('Message Request পাঠানো যায়নি: '+e.message)}}
-async function acceptMessageRequest(uid){try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid+'/status']='accepted';u['messageRequests/'+currentUser.uid+'/'+uid+'/respondedAt']=Date.now();u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=true;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=null;await db.ref().update(u);const access={};access['chatAccess/'+currentUser.uid+'/'+uid]=true;access['chatAccess/'+uid+'/'+currentUser.uid]=true;await db.ref().update(access);renderUI();alert('Message Request accepted. এখন সে আপনার Chat List-এ আছে এবং চ্যাট করতে পারবে। সে চাইলে Friend Request-ও পাঠাতে পারবে।')}catch(e){alert('Message Request accept হয়েছে কি না বা Chat access তৈরি হয়েছে কি না যাচাই করুন: '+e.message)}}
-async function denyMessageRequest(uid,mode){if(!confirm(mode==='blocked'?'এই ব্যক্তির Friend Request নিষিদ্ধ করবেন?':'Message Request মুছে দেবেন?'))return;try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=null;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=true;await db.ref().update(u)}catch(e){alert(e.message)}}
+async function sendMessageRequest(uid){const target=allUsers[uid];if(!target)return;const old=await db.ref('messageRequests/'+uid+'/'+currentUser.uid).once('value');if(old.val()?.status==='pending')return alert('আপনার Message Request আগে থেকেই Pending আছে।');const text=prompt('Message Request-এর সঙ্গে একটি ছোট মেসেজ লিখুন:','হ্যালো! আমি আপনার সঙ্গে যোগাযোগ করতে চাই।');if(text===null||!text.trim())return;try{await db.ref('messageRequests/'+uid+'/'+currentUser.uid).set({from:currentUser.uid,text:text.trim().slice(0,1000),status:'pending',createdAt:Date.now()});alert('Message Request পাঠানো হয়েছে।')}catch(e){alert(e.message)}}
+async function acceptMessageRequest(uid){try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid+'/status']='accepted';u['messageRequests/'+currentUser.uid+'/'+uid+'/respondedAt']=Date.now();u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=true;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=null;await db.ref().update(u);const access={};access['chatAccess/'+currentUser.uid+'/'+uid]=true;access['chatAccess/'+uid+'/'+currentUser.uid]=true;await db.ref().update(access);renderUI();alert('Message Request accepted.')}catch(e){alert(e.message)}}
+async function denyMessageRequest(uid,mode){if(!confirm('নিশ্চিত করতে চান?'))return;try{const u={};u['messageRequests/'+currentUser.uid+'/'+uid]=null;u['friendRequestAllowed/'+uid+'/'+currentUser.uid]=null;u['friendRequestDenied/'+currentUser.uid+'/'+uid]=true;await db.ref().update(u)}catch(e){alert(e.message)}}
+
 async function openChat(uid){
- try{
-  if(!currentUser||!uid||uid===currentUser.uid)return;
-  if(friendships[uid]!=='accepted'&&chatAccess[uid]!==true){alert('আগে Friend Request অথবা Message Request গ্রহণ করতে হবে।');return;}
-  if(blockedUsers[uid]){alert('এই ব্যবহারকারীকে আপনি ব্লক করেছেন।');return;}
-  let u=allUsers[uid];
-  if(!u){const profileSnap=await db.ref('profiles/'+uid).once('value');u=profileSnap.val();if(u)u={...u,uid:u.uid||uid};if(!u){const directorySnap=await db.ref('profileDirectory/'+uid).once('value');u=directorySnap.val();}if(!u){alert('ব্যবহারকারীর প্রোফাইল পাওয়া যায়নি।');return;}allUsers[uid]=u;}
-  // Read the other person's block entry before opening. Rules must allow either participant to read this one pair entry.
-  const remoteBlockSnap=await db.ref('blocked/'+uid+'/'+currentUser.uid).once('value');
-  if(remoteBlockSnap.val()===true){alert('এই ব্যবহারকারী আপনাকে ব্লক করেছেন।');return;}
-  // Clear old chat listeners before switching conversations.
-  chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];messageRecords={};
-  activeChatUserId=uid;
-  $('chatArea').classList.remove('hidden');$('chatArea').classList.add('flex');
-  if(window.innerWidth<700){$('sidebar').classList.add('hidden');$('chatArea').style.width='100%';}
-  $('emptyChatState').classList.add('hidden');
-  $('activeChatInterface').classList.remove('hidden');$('activeChatInterface').classList.add('flex');
-  $('activeChatAvatar').src=fallback;if(u.privacy!=='private'||friendships[uid]==='accepted'||uid===currentUser.uid)db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(activeChatUserId===uid&&ps.val()?.url)$('activeChatAvatar').src=ps.val().url}).catch(()=>{});
-  $('activeChatName').textContent=u.name||'User';db.ref('nicknames/'+currentUser.uid+'/'+uid).once('value').then(ns=>{if(activeChatUserId===uid&&ns.val())$('activeChatName').textContent=ns.val()});
-  $('activeChatBio').textContent='';
-  $('messagesContainer').innerHTML='';$('messageInput').value='';clearReply();
-  loadMessages();listenTyping();listenChatSettings();
-  setTimeout(()=>$('messageInput').focus(),100);
- }catch(e){
-  console.error('openChat failed:',e);
-  alert('চ্যাট খুলতে সমস্যা হয়েছে: '+(e.code==='PERMISSION_DENIED'?'Firebase Rules-এ blocked pair read permission নেই। নতুন Rules Publish করতে হবে।':e.message));
- }
+  try{
+    if(!currentUser||!uid||uid===currentUser.uid)return;
+    let u=allUsers[uid];
+    if(!u){const profileSnap=await db.ref('profiles/'+uid).once('value');u=profileSnap.val();if(u)u={...u,uid:u.uid||uid};if(!u){const directorySnap=await db.ref('profileDirectory/'+uid).once('value');u=directorySnap.val();}if(!u){alert('প্রোফাইল পাওয়া যায়নি।');return;}allUsers[uid]=u;}
+    chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; messageRecords={};
+    activeChatUserId=uid;
+    $('chatArea').classList.remove('hidden'); $('chatArea').classList.add('flex');
+    if(window.innerWidth<700){$('sidebar').classList.add('hidden'); $('chatArea').style.width='100%';}
+    $('emptyChatState').classList.add('hidden'); $('activeChatInterface').classList.remove('hidden'); $('activeChatInterface').classList.add('flex');
+    $('activeChatAvatar').src=fallback; db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(activeChatUserId===uid&&ps.val()?.url)$('activeChatAvatar').src=ps.val().url}).catch(()=>{});
+    $('activeChatName').textContent=u.name||'User';
+    db.ref('nicknames/'+currentUser.uid+'/'+uid).once('value').then(ns=>{if(activeChatUserId===uid&&ns.val())$('activeChatName').textContent=ns.val()});
+    $('messagesContainer').innerHTML=''; $('messageInput').value=''; clearReply();
+    loadMessages(); listenTyping(); listenChatSettings();
+    setTimeout(()=>$('messageInput').focus(),100);
+  }catch(e){console.error(e); alert('চ্যাট খুলতে সমস্যা হয়েছে।');}
 }
-function closeChat(){clearTyping();if(chatSettingsListener&&chatSettingsPath)db.ref(chatSettingsPath).off('value',chatSettingsListener);chatSettingsListener=null;chatSettingsPath=null;$('messagesContainer').style.backgroundImage='';chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];activeChatUserId=null;$('activeChatInterface').classList.add('hidden');$('emptyChatState').classList.remove('hidden');$('typingIndicator').classList.add('hidden');clearReply();if(innerWidth<700){$('chatArea').classList.add('hidden');$('chatArea').classList.remove('flex');$('sidebar').classList.remove('hidden');$('chatArea').style.width=''}}
+function closeChat(){if(chatSettingsListener&&chatSettingsPath)db.ref(chatSettingsPath).off('value',chatSettingsListener); chatSettingsListener=null; chatSettingsPath=null; $('messagesContainer').style.backgroundImage=''; chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; activeChatUserId=null; $('activeChatInterface').classList.add('hidden'); $('emptyChatState').classList.remove('hidden'); $('typingIndicator').classList.add('hidden'); clearReply(); if(innerWidth<700){$('chatArea').classList.add('hidden'); $('chatArea').classList.remove('flex'); $('sidebar').classList.remove('hidden'); $('chatArea').style.width=''}}
 function loadMessages(){
- chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];messageRecords={};const box=$('messagesContainer');box.innerHTML='';let first=true;
- const draw=()=>{
-  const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100;box.innerHTML='';
-  Object.entries(messageRecords).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).forEach(([id,m])=>{
-   if(!m)return;
-   const mine=m.sender===currentUser.uid,row=document.createElement('div');row.id='msg-'+id;row.className='message-row '+(mine?'mine-row':'their-row');
-   const bubble=document.createElement('div');bubble.className='bubble '+(mine?'mine':'theirs');
-   if(m.replyTo?.id){
-    const rp=document.createElement('button');rp.type='button';rp.className='reply-quote';rp.title='মূল মেসেজে যেতে চাপ দিন';rp.onclick=()=>jumpToMessage(m.replyTo.id);
-    if(m.replyTo.url&&(m.replyTo.type==='image'||m.replyTo.type==='video')){const thumb=document.createElement(m.replyTo.type==='video'?'video':'img');thumb.src=m.replyTo.url;if(thumb.tagName==='VIDEO'){thumb.muted=true;thumb.playsInline=true;thumb.preload='metadata'}else thumb.alt='Replied image';rp.append(thumb)}
-    const rt=document.createElement('span');rt.className='reply-quote-text';rt.textContent='Reply: '+(m.replyTo.text|| (m.replyTo.type==='image'?'image':m.replyTo.type==='video'?'video':'Message'));rp.append(rt);bubble.append(rp);
-   }
-   if(m.text){const p=document.createElement('p');p.className='text-sm whitespace-pre-wrap break-words';p.textContent=m.text;bubble.append(p)}
-   if(m.type==='image'&&m.url){const im=document.createElement('img');im.src=m.url;im.alt='Shared image';im.loading='lazy';im.className='media-thumb';im.title='ছবি বড় করে দেখতে চাপ দিন';im.onclick=()=>openMediaViewer(m.url,'image');bubble.append(im)}
-   if(m.type==='video'&&m.url){const wrap=document.createElement('div');wrap.className='video-thumb-wrap';wrap.title='ভিডিও বড় করে দেখতে চাপ দিন';const v=document.createElement('video');v.src=m.url;v.playsInline=true;v.muted=true;v.preload='metadata';v.className='media-thumb';const play=document.createElement('span');play.className='video-thumb-play';play.textContent='▶';wrap.append(v,play);wrap.onclick=()=>openMediaViewer(m.url,'video');bubble.append(wrap)}
-   if(m.type==='voice'&&m.url){const a=document.createElement('audio');a.src=m.url;a.controls=true;a.className='w-full mt-2';bubble.append(a)}
-   row.append(bubble);
-   const meta=document.createElement('div');meta.className='message-meta';meta.textContent=(m.time||'')+(mine?' · '+(m.status==='seen'?'Seen':m.status==='delivered'?'Delivered':'Sent'):'');row.append(meta);
-   const reacts=document.createElement('div');reacts.className='flex flex-wrap gap-1 mt-1';Object.entries(m.reactions||{}).forEach(([emoji,users])=>{const count=Object.keys(users||{}).length;if(!count)return;const rb=document.createElement('button');rb.className='text-xs bg-black/20 rounded-full px-2 py-1';rb.textContent=emoji+' '+count;rb.onclick=()=>reactToMessage(id,emoji);reacts.append(rb)});if(reacts.childNodes.length)row.append(reacts);
-   const tools=document.createElement('div');tools.className='msg-tools';const react=document.createElement('button');react.textContent='React';react.onclick=()=>showMessageReactionPicker(id);const reply=document.createElement('button');reply.textContent='Reply';reply.onclick=()=>setReply(id,m);tools.append(react,reply);if(mine){const del=document.createElement('button');del.textContent='Delete';del.onclick=()=>deleteMessage(id);tools.append(del)}row.append(tools);box.append(row);
+  chatListeners.forEach(x=>detach(x.path,x.cb)); chatListeners=[]; messageRecords={}; const box=$('messagesContainer'); box.innerHTML=''; let first=true;
+  const draw=()=>{
+    const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100; box.innerHTML='';
+    Object.entries(messageRecords).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).forEach(([id,m])=>{
+      if(!m)return;
+      const mine=m.sender===currentUser.uid,row=document.createElement('div'); row.id='msg-'+id; row.className='message-row '+(mine?'mine-row':'their-row');
+      const bubble=document.createElement('div'); bubble.className='bubble '+(mine?'mine':'theirs');
+      if(m.replyTo?.id){
+        const rp=document.createElement('button'); rp.type='button'; rp.className='reply-quote'; rp.onclick=()=>jumpToMessage(m.replyTo.id);
+        if(m.replyTo.url&&(m.replyTo.type==='image'||m.replyTo.type==='video')){const thumb=document.createElement(m.replyTo.type==='video'?'video':'img'); thumb.src=m.replyTo.url; rp.append(thumb);}
+        const rt=document.createElement('span'); rt.className='reply-quote-text'; rt.textContent='Reply: '+(m.replyTo.text||'Message'); rp.append(rt); bubble.append(rp);
+      }
+      if(m.text){const p=document.createElement('p'); p.className='text-sm whitespace-pre-wrap break-words'; p.textContent=m.text; bubble.append(p);}
+      if(m.type==='image'&&m.url){const im=document.createElement('img'); im.src=m.url; im.className='media-thumb'; im.onclick=()=>openMediaViewer(m.url,'image'); bubble.append(im);}
+      if(m.type==='video'&&m.url){const wrap=document.createElement('div'); wrap.className='video-thumb-wrap'; const v=document.createElement('video'); v.src=m.url; const play=document.createElement('span'); play.className='video-thumb-play'; play.textContent='▶'; wrap.append(v,play); wrap.onclick=()=>openMediaViewer(m.url,'video'); bubble.append(wrap);}
+      row.append(bubble);
+      const meta=document.createElement('div'); meta.className='message-meta'; meta.textContent=(m.time||'')+(mine?' · '+(m.status==='seen'?'Seen':'Sent'):''); row.append(meta);
+      box.append(row);
+    });
+    if(nearBottom||first)box.scrollTop=box.scrollHeight; first=false;
+  };
+  [chatPath(currentUser.uid,activeChatUserId),chatPath(activeChatUserId,currentUser.uid)].forEach(p=>{
+    const cb=s=>{Object.entries(s.val()||{}).forEach(([k,v])=>{if(v)messageRecords[k]=v}); draw();};
+    db.ref(p).on('value',cb); chatListeners.push({path:p,cb});
   });
-  if(nearBottom||first)box.scrollTop=box.scrollHeight;first=false;
- };
- [chatPath(currentUser.uid,activeChatUserId),chatPath(activeChatUserId,currentUser.uid)].forEach(p=>{const cb=s=>{Object.entries(s.val()||{}).forEach(([k,v])=>{if(v)messageRecords[k]=v});draw();markIncomingDelivered()};db.ref(p).on('value',cb);chatListeners.push({path:p,cb})})
 }
-function jumpToMessage(id){const target=$('msg-'+id);if(!target){alert('মূল মেসেজটি আর পাওয়া যাচ্ছে না।');return}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('message-highlight');setTimeout(()=>target.classList.remove('message-highlight'),2200)}
-async function markIncomingDelivered(){if(!activeChatUserId)return;const updates={};Object.entries(messageRecords).forEach(([id,m])=>{if(m.sender===activeChatUserId&&m.receiver===currentUser.uid&&m.status!=='seen')updates[chatPath(activeChatUserId,currentUser.uid)+'/'+id+'/status']='seen'});if(Object.keys(updates).length)db.ref().update(updates).catch(()=>{})}
-async function writeMessage(record){if(!activeChatUserId)throw Error('কোনো Chat নির্বাচন করা হয়নি।');if(restrictedUsers[activeChatUserId])throw Error('এই অ্যাকাউন্টটি আপনি Restrict করেছেন। Unrestrict না করা পর্যন্ত মেসেজ পাঠানো যাবে না।');const remoteRestrict=await db.ref('restricted/'+activeChatUserId+'/'+currentUser.uid).once('value');if(remoteRestrict.val()===true)throw Error('এই ব্যবহারকারী আপনাকে Restrict করেছেন।');if(friendships[activeChatUserId]!=='accepted'&&chatAccess[activeChatUserId]!==true)throw Error('আগে Friend Request অথবা Message Request গ্রহণ করতে হবে।');if(blockedUsers[activeChatUserId])throw Error('এই ব্যবহারকারীকে ব্লক করা আছে।');const remoteBlock=await db.ref('blocked/'+activeChatUserId+'/'+currentUser.uid).once('value');if(remoteBlock.val())throw Error('এই ব্যবহারকারী আপনাকে ব্লক করেছেন।');const key=db.ref().child('messageKey').push().key,m={...record,replyTo:replyTo?{...replyTo}:null,id:key,sender:currentUser.uid,receiver:activeChatUserId,status:'sent',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()};const u={};u[chatPath(currentUser.uid,activeChatUserId)+'/'+key]=m;u[chatPath(activeChatUserId,currentUser.uid)+'/'+key]=m;await db.ref().update(u);return key}
-async function sendQuickReaction(){if(!activeChatUserId)return;try{await writeMessage({type:'text',text:quickReactionEmoji});}catch(e){alert('Quick reaction পাঠানো যায়নি: '+e.message)}}
-async function sendMessage(){const input=$('messageInput'),txt=input.value.trim();if(!txt)return;if(txt.length>4000)return alert('Message সর্বোচ্চ ৪০০০ অক্ষর হতে পারবে।');try{await writeMessage({type:'text',text:txt,replyTo:replyTo||null});input.value='';clearReply();clearTyping()}catch(e){alert('Message failed: '+e.message)}}
-function handleKeyPress(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
-function setReply(id,m){const label=m.text|| (m.type==='image'?'image':m.type==='video'?'video':m.type==='voice'?'voice message':'Message');replyTo={id,text:String(label).slice(0,120),type:m.type||'text',url:m.url||'',sender:m.sender||''};const preview=$('replyPreviewText');preview.textContent='Reply: '+replyTo.text;$('replyPreview').classList.remove('hidden');$('messageInput').focus()}
-function clearReply(){replyTo=null;$('replyPreview').classList.add('hidden');$('replyPreviewText').textContent=''}
-async function deleteMessage(id){if(!confirm('এই মেসেজটি সবার জন্য Delete করবেন?'))return;const u={};u[chatPath(currentUser.uid,activeChatUserId)+'/'+id]=null;u[chatPath(activeChatUserId,currentUser.uid)+'/'+id]=null;try{await db.ref().update(u)}catch(e){alert('Delete failed: '+e.message)}}
-function showMessageReactionPicker(id){const emojis=['❤️','😂','😍','👍','😢','🔥','👏','😮','🙏','🎉'];const picker=document.createElement('div');picker.className='fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-800 border border-gray-600 rounded-2xl p-3 flex flex-wrap gap-2 shadow-xl';emojis.forEach(emoji=>{const b=document.createElement('button');b.className='text-2xl';b.textContent=emoji;b.onclick=()=>{reactToMessage(id,emoji);picker.remove()};picker.append(b)});document.body.append(picker);setTimeout(()=>picker.remove(),8000)}
-async function reactToMessage(id,emoji){if(!activeChatUserId)return;const already=messageRecords[id]?.reactions?.[emoji]?.[currentUser.uid],u={};u[chatPath(currentUser.uid,activeChatUserId)+'/'+id+'/reactions/'+emoji+'/'+currentUser.uid]=already?null:true;u[chatPath(activeChatUserId,currentUser.uid)+'/'+id+'/reactions/'+emoji+'/'+currentUser.uid]=already?null:true;try{await db.ref().update(u)}catch(e){alert(e.message)}}
-function insertEmoji(){const emojis=['😀','😂','😍','🥰','❤️','🔥','👍','🙏','😎','🎉','😭','😘'];const chosen=prompt('একটি Emoji লিখুন:\n'+emojis.join(' '));if(chosen)$('messageInput').value+=' '+chosen}
-function onMessageTyping(){if(!activeChatUserId)return;const base='typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid;db.ref(base).set({typing:true,at:Date.now()}).catch(()=>{});clearTimeout(typingTimer);typingTimer=setTimeout(clearTyping,1800)}
-function clearTyping(){clearTimeout(typingTimer);if(currentUser&&activeChatUserId)db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).remove().catch(()=>{})}
-function listenTyping(){const p='typing/'+activeChatUserId+'/'+currentUser.uid+'/'+activeChatUserId;const cb=s=>{$('typingIndicator').classList.toggle('hidden',!s.val()?.typing);$('typingIndicator').textContent=(allUsers[activeChatUserId]?.name||'Friend')+' is typing...'};db.ref(p).on('value',cb);chatListeners.push({path:p,cb})}
-function notifyUser(message){if('Notification'in window&&Notification.permission==='granted')new Notification('APCHAT',{body:message,icon:currentUser?.avatar||undefined})}
-async function uploadToCloudinary(file,resourceType,onProgress){const form=new FormData();form.append('file',file);form.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);form.append('folder','apchat');const endpoint=`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;return new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('POST',endpoint);xhr.upload.onprogress=e=>{if(e.lengthComputable&&onProgress)onProgress(Math.round(e.loaded/e.total*100))};xhr.onload=()=>{let d={};try{d=JSON.parse(xhr.responseText)}catch{}if(xhr.status>=200&&xhr.status<300)resolve(d.secure_url);else reject(Error(d.error?.message||'Cloudinary upload failed'))};xhr.onerror=()=>reject(Error('Network error during upload'));xhr.send(form)})}
-let mediaViewerOpen=false,mediaViewerHistory=false;
-function openMediaViewer(url,type){if(!url)return;const stage=$('mediaViewerStage');stage.innerHTML='';let el;if(type==='video'){el=document.createElement('video');el.src=url;el.controls=true;el.autoplay=true;el.playsInline=true;el.preload='auto';el.style.maxWidth='100%';el.style.maxHeight='100%'}else{el=document.createElement('img');el.src=url;el.alt='Full size image';el.style.maxWidth='100%';el.style.maxHeight='100%';el.style.objectFit='contain'}el.id='mediaViewerContent';stage.append(el);$('mediaViewer').classList.remove('hidden');mediaViewerOpen=true;try{history.pushState({apchatMediaViewer:true},'','#media-viewer');mediaViewerHistory=true}catch(e){mediaViewerHistory=false}}
-function closeMediaViewer(fromPop=false){if(!mediaViewerOpen)return;const v=$('mediaViewerStage').querySelector('video');if(v){v.pause();v.removeAttribute('src');v.load()}$('mediaViewerStage').innerHTML='';$('mediaViewer').classList.add('hidden');mediaViewerOpen=false;if(mediaViewerHistory&&!fromPop){mediaViewerHistory=false;try{history.back()}catch(e){}}else mediaViewerHistory=false}
-window.addEventListener('popstate',()=>{if(mediaViewerOpen)closeMediaViewer(true)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mediaViewerOpen)closeMediaViewer()});
-function getVideoDuration(file){return new Promise((resolve,reject)=>{const v=document.createElement('video'),u=URL.createObjectURL(file);v.preload='metadata';v.onloadedmetadata=()=>{URL.revokeObjectURL(u);resolve(v.duration)};v.onerror=()=>{URL.revokeObjectURL(u);reject(Error('ভিডিও পড়া যায়নি।'))};v.src=u})}
-async function sendGenericFile(file){if(!file)return;try{if(file.size>500*1024*1024)throw Error('ফাইল ৫০০ MB-এর বেশি হতে পারবে না।');$('recordStatus').textContent='Uploading 0%';const resource=file.type.startsWith('video/')||file.type.startsWith('audio/')?'video':'raw';const url=await uploadToCloudinary(file,resource,p=>$('recordStatus').textContent='Uploading '+p+'%');await writeMessage({type:'file',url,fileName:file.name,fileSize:file.size,mimeType:file.type});$('recordStatus').textContent='Sent';setTimeout(()=>$('recordStatus').textContent='',2500)}catch(e){alert('ফাইল পাঠানো যায়নি: '+e.message);$('recordStatus').textContent=''}finally{$('fileInput').value=''}}
-async function sendMedia(file,type){if(!file)return;try{if(type==='image'&&!file.type.startsWith('image/'))throw Error('একটি ছবি নির্বাচন করুন।');if(type==='video'&&!file.type.startsWith('video/'))throw Error('একটি ভিডিও নির্বাচন করুন।');if(type==='video'&&await getVideoDuration(file)>120.05)throw Error('ভিডিও সর্বোচ্চ ২ মিনিট হতে পারবে।');if(file.size>500*1024*1024)throw Error('ফাইল ৫০০ MB-এর বেশি হতে পারবে না।');$('recordStatus').textContent='Uploading 0%';const url=await uploadToCloudinary(file,type,p=>$('recordStatus').textContent='Uploading '+p+'%');await writeMessage({type,url,fileName:file.name,fileSize:file.size,mimeType:file.type});clearReply();$('recordStatus').textContent='Sent';setTimeout(()=>$('recordStatus').textContent='',2500)}catch(e){alert('ফাইল পাঠানো যায়নি: '+e.message);$('recordStatus').textContent=''}$(type==='image'?'imageInput':'videoInput').value=''}
-async function toggleRecording(){if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();$('recordStatus').textContent='Processing...';$('recordBtn').textContent='🎤';return}try{recordingCancelled=false;recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});recordedChunks=[];const types=['audio/webm;codecs=opus','audio/webm','audio/mp4'];const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';mediaRecorder=new MediaRecorder(recordingStream,mime?{mimeType:mime}:undefined);mediaRecorder.ondataavailable=e=>{if(e.data.size)recordedChunks.push(e.data)};mediaRecorder.onstop=async()=>{recordingStream?.getTracks().forEach(t=>t.stop());$('cancelRecordBtn').classList.add('hidden');if(recordingCancelled){$('recordStatus').textContent='Recording cancelled';return}const blob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||'audio/webm'});if(!blob.size){$('recordStatus').textContent='';return}try{$('recordStatus').textContent='Uploading voice...';const ext=blob.type.includes('mp4')?'m4a':'webm',file=new File([blob],'voice-message.'+ext,{type:blob.type}),url=await uploadToCloudinary(file,'video',p=>$('recordStatus').textContent='Voice '+p+'%');await writeMessage({type:'voice',url,mimeType:blob.type,fileSize:blob.size});clearReply();$('recordStatus').textContent='Voice sent';setTimeout(()=>$('recordStatus').textContent='',2500)}catch(e){alert('Voice message failed: '+e.message);$('recordStatus').textContent=''}};mediaRecorder.start();$('recordStatus').textContent='● Recording...';$('recordBtn').textContent='⏹';$('cancelRecordBtn').classList.remove('hidden')}catch(e){alert('Microphone permission দিন: '+e.message)}}
-function cancelRecording(){if(!mediaRecorder||mediaRecorder.state!=='recording')return;recordingCancelled=true;mediaRecorder.stop();$('recordBtn').textContent='🎤';$('recordStatus').textContent='Cancelling...'}
+function jumpToMessage(id){const target=$('msg-'+id);if(!target)return; target.scrollIntoView({behavior:'smooth',block:'center'});}
+async function writeMessage(record){
+  if(!activeChatUserId)throw Error('চ্যাট নির্বাচন করা হয়নি।');
+  const key=db.ref().child('messageKey').push().key, m={...record,replyTo:replyTo?{...replyTo}:null,id:key,sender:currentUser.uid,receiver:activeChatUserId,status:'sent',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()};
+  const u={}; u[chatPath(currentUser.uid,activeChatUserId)+'/'+key]=m; u[chatPath(activeChatUserId,currentUser.uid)+'/'+key]=m;
+  // Update chatMeta for chat list
+  u['chatMeta/'+currentUser.uid+'/'+activeChatUserId]={lastMessage:m.text||'Media',lastMessageAt:m.createdAt,unreadCount:0};
+  await db.ref().update(u); return key;
+}
+async function sendMessage(){const input=$('messageInput'),txt=input.value.trim();if(!txt)return;try{await writeMessage({type:'text',text:txt}); input.value=''; clearReply();}catch(e){alert(e.message);}}
+function handleKeyPress(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendMessage();}}
+function setReply(id,m){replyTo={id,text:m.text||'Media',type:m.type||'text',url:m.url||'',sender:m.sender||''}; $('replyPreviewText').textContent='Reply: '+replyTo.text; $('replyPreview').classList.remove('hidden');}
+function clearReply(){replyTo=null; $('replyPreview')?.classList.add('hidden');}
+function onMessageTyping(){if(!activeChatUserId)return; db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).set({typing:true,at:Date.now()}).catch(()=>{}); clearTimeout(typingTimer); typingTimer=setTimeout(()=>{db.ref('typing/'+currentUser.uid+'/'+activeChatUserId+'/'+currentUser.uid).remove().catch(()=>{})},1800);}
+function listenTyping(){const p='typing/'+activeChatUserId+'/'+currentUser.uid+'/'+activeChatUserId; const cb=s=>{$('typingIndicator').classList.toggle('hidden',!s.val()?.typing); $('typingIndicator').textContent='Typing...';}; db.ref(p).on('value',cb); chatListeners.push({path:p,cb});}
+function listenChatSettings(){}
+async function uploadToCloudinary(file,resourceType){const form=new FormData();form.append('file',file);form.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);form.append('folder','apchat');const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,{method:'POST',body:form});const d=await res.json();if(d.secure_url)return d.secure_url;throw Error('Upload failed');}
+function openMediaViewer(url,type){const stage=$('mediaViewerStage');stage.innerHTML=''; const el=document.createElement(type==='video'?'video':'img'); el.src=url; if(type==='video')el.controls=true; el.style.maxWidth='100%'; el.style.maxHeight='100%'; stage.append(el); $('mediaViewer').classList.remove('hidden');}
+function closeMediaViewer(){$('mediaViewer').classList.add('hidden'); $('mediaViewerStage').innerHTML='';}
+async function sendMedia(file,type){if(!file)return;try{const url=await uploadToCloudinary(file,type); await writeMessage({type,url});}catch(e){alert(e.message);}}
+
+async function uploadPhoto(file){if(!file)return;try{const url=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; renderUI(); alert('Profile photo updated');}catch(e){alert(e.message);}}
 function chooseProfilePhoto(){$('photoInput').click()}
-async function cropImageToAspect(file,aspect,label){
- if(!file||!file.type.startsWith('image/'))return file;
- const bitmap=await createImageBitmap(file); const sw=bitmap.width,sh=bitmap.height;
- let sx=0,sy=0,cw=sw,ch=sh;
- if(sw/sh>aspect){cw=Math.round(sh*aspect);sx=Math.round((sw-cw)/2)}else{ch=Math.round(sw/aspect);sy=Math.round((sh-ch)/2)}
- const max=1600; let ow=cw,oh=ch;if(ow>max||oh>max){const k=Math.min(max/ow,max/oh);ow=Math.round(ow*k);oh=Math.round(oh*k)}
- const c=document.createElement('canvas');c.width=ow;c.height=oh;const ctx=c.getContext('2d');ctx.drawImage(bitmap,sx,sy,cw,ch,0,0,ow,oh);
- const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));
- bitmap.close?.(); return new File([blob],file.name.replace(/\.[^.]+$/,'')+'-cropped.jpg',{type:'image/jpeg'});
+
+/* Fixed Privacy Settings without DOM error */
+function togglePrivacySettings(){
+  if(!currentUser)return;
+  $('privacySelect').value=currentUser.privacy||'public';
+  $('privacyModal').classList.remove('hidden');
 }
-async function uploadPhoto(file){if(!file)return;try{if(!file.type.startsWith('image/'))throw Error('ছবি নির্বাচন করুন।');$('recordStatus').textContent='ছবি ক্রপ করা হচ্ছে...';file=await cropImageToAspect(file,1,'profile');const url=await uploadToCloudinary(file,'image');await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()});currentUser.avatar=url;$('myAvatar').src=url;renderUI();alert('Profile photo updated')}catch(e){alert('ছবি আপলোড হয়নি: '+e.message)}finally{$('recordStatus').textContent='';$('photoInput').value=''}}
-function togglePrivacySettings(){$('privacySelect').value=currentUser.privacy||'public';$('privacyModal').classList.remove('hidden')}
 function closePrivacyModal(){$('privacyModal').classList.add('hidden')}
-async function savePrivacySettings(){const v=$('privacySelect').value;try{await db.ref().update({['profiles/'+currentUser.uid+'/privacy']:v,['profileDirectory/'+currentUser.uid+'/privacy']:v});currentUser.privacy=v;$('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;closePrivacyModal();renderUI();alert('Privacy updated')}catch(e){alert('Save failed: '+e.message)}}
-async function uploadStory(file){try{if(!file)throw Error('একটি ছবি বা ভিডিও নির্বাচন করুন।');const isVideo=file.type.startsWith('video/'),isImage=file.type.startsWith('image/');if(!isVideo&&!isImage)throw Error('শুধু ছবি বা ভিডিও নির্বাচন করুন।');if(isVideo&&await getVideoDuration(file)>60.05)throw Error('Story ভিডিও সর্বোচ্চ ৬০ সেকেন্ড হতে পারবে।');pendingStoryFile=file;const preview=$('storyPreview');preview.innerHTML='';const url=URL.createObjectURL(file),media=document.createElement(isVideo?'video':'img');media.src=url;if(isVideo)media.controls=true;media.className='w-full rounded-lg';media.style.maxHeight='220px';media.style.objectFit='contain';preview.append(media);$('storyPrivacyModal').classList.remove('hidden');document.querySelector('input[name="storyPrivacy"][value="public"]').checked=true;selectedStoryFriends.clear();$('storyFriendSearch').value='';privacyChanged()}catch(e){alert('Story প্রস্তুত হয়নি: '+e.message);$('storyInput').value=''}}
-function selectedStoryPrivacy(){return document.querySelector('input[name="storyPrivacy"]:checked')?.value||'public'}
-function privacyChanged(){const mode=selectedStoryPrivacy();$('storyAudienceWrap').classList.toggle('hidden',mode!=='custom'&&mode!=='hide');$('storyAudienceTitle').textContent=mode==='custom'?'যাদের Story দেখাতে চান':'যাদের কাছ থেকে Story লুকাবেন';renderStoryFriendChoices()}
-function getAcceptedFriends(){return Object.keys(friendships||{}).filter(uid=>friendships[uid]==='accepted'&&allUsers[uid]).map(uid=>allUsers[uid])}
-function renderStoryFriendChoices(){const box=$('storyFriendChoices');if(!box)return;const mode=selectedStoryPrivacy();if(mode!=='custom'&&mode!=='hide'){box.innerHTML='';$('storyFriendCount').textContent='';return}const q=$('storyFriendSearch').value.trim().toLowerCase().replace(/^@/,'');const friends=getAcceptedFriends().filter(u=>!q||String(u.name||'').toLowerCase().includes(q)||String(u.handle||'').toLowerCase().includes(q));box.innerHTML='';if(!friends.length)box.innerHTML='<p class="text-xs text-gray-400 p-2">কোনো Friend পাওয়া যায়নি।</p>';friends.forEach(u=>{const label=document.createElement('label');label.className='flex items-center gap-3 p-2 rounded-lg bg-gray-800';const cb=document.createElement('input');cb.type='checkbox';cb.checked=selectedStoryFriends.has(u.uid);cb.onchange=()=>{if(cb.checked)selectedStoryFriends.add(u.uid);else selectedStoryFriends.delete(u.uid);updateStoryFriendCount()};const img=document.createElement('img');img.src=u.avatar||fallback;img.className='w-8 h-8 rounded-full object-cover';const name=document.createElement('span');name.className='text-sm';name.textContent=(u.name||'User')+' · @'+(u.handle||'');label.append(cb,img,name);box.append(label)});updateStoryFriendCount()}
-function updateStoryFriendCount(){$('storyFriendCount').textContent=selectedStoryFriends.size+' জন নির্বাচিত'}
-function toggleAllStoryFriends(){const friends=getAcceptedFriends(),q=$('storyFriendSearch').value.trim().toLowerCase().replace(/^@/,'');const visible=friends.filter(u=>!q||String(u.name||'').toLowerCase().includes(q)||String(u.handle||'').toLowerCase().includes(q));const all=visible.length&&visible.every(u=>selectedStoryFriends.has(u.uid));visible.forEach(u=>all?selectedStoryFriends.delete(u.uid):selectedStoryFriends.add(u.uid));renderStoryFriendChoices()}
-function makeOriginalMusic(kind,seconds){const rate=22050,n=Math.floor(rate*seconds),buf=new ArrayBuffer(44+n*2),v=new DataView(buf),put=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};put(0,'RIFF');v.setUint32(4,36+n*2,true);put(8,'WAVE');put(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,n*2,true);const scales={calm:[261.63,329.63,392,329.63],dream:[392,493.88,587.33,493.88],energy:[220,277.18,329.63,277.18]},notes=scales[kind]||scales.calm;for(let i=0;i<n;i++){const t=i/rate,f=notes[Math.floor(t/.5)%notes.length],env=Math.min(1,(t%.5)*12)*Math.max(0,Math.min(1,(seconds-t)*3)),sample=(Math.sin(2*Math.PI*f*t)+.35*Math.sin(2*Math.PI*f*2*t))*.16*env;v.setInt16(44+i*2,sample*32767,true)}return new Blob([buf],{type:'audio/wav'})}
-function cancelStory(){$('storyPrivacyModal').classList.add('hidden');pendingStoryFile=null;selectedStoryFriends.clear();$('storyInput').value=''}
-async function postStory(){const mode=selectedStoryPrivacy();if((mode==='custom'||mode==='hide')&&!selectedStoryFriends.size)return alert('কমপক্ষে একজন Friend নির্বাচন করুন।');if(!pendingStoryFile)return alert('Story ফাইল পাওয়া যায়নি।');const btn=$('postStoryBtn');btn.disabled=true;btn.textContent='Uploading...';try{const file=pendingStoryFile,isVideo=file.type.startsWith('video/'),music=$('storyMusic').value,duration=Math.max(1,Math.min(60,Number($('musicDuration').value)||15)),key=db.ref('stories/'+currentUser.uid).push().key,mediaUrl=await uploadToCloudinary(file,isVideo?'video':'image');let musicUrl='';if(music!=='none')musicUrl=await uploadToCloudinary(makeOriginalMusic(music,duration),'video');const audience={};selectedStoryFriends.forEach(uid=>audience[uid]=true);const now=Date.now(),record={mediaUrl,image:mediaUrl,mediaType:isVideo?'video':'image',musicUrl,musicType:music,musicDuration:music==='none'?0:duration,name:currentUser.name,handle:currentUser.handle,privacy:mode,audience,createdAt:now,expiresAt:now+86400000};await db.ref('stories/'+currentUser.uid+'/'+key).set(record);cancelStory();alert('Story posted successfully');loadStories()}catch(e){alert('Story পোস্ট হয়নি: '+e.message)}finally{btn.disabled=false;btn.textContent='Post Story'}}
-function canSeeStory(uid,s){if(uid===currentUser.uid)return true;const mode=s.privacy||'public',isFriend=friendships[uid]==='accepted',audience=s.audience||{};if(mode==='public')return true;if(mode==='friends')return isFriend;if(mode==='custom')return audience[currentUser.uid]===true;if(mode==='hide')return !audience[currentUser.uid];return false}
-async function loadStories(){const bar=$('apStories');if(!bar||!currentUser)return;bar.innerHTML='';const add=document.createElement('button');add.className='apStory';add.innerHTML='<span style="display:block;font-size:30px">＋</span>Add Story';add.onclick=()=>$('storyInput').click();bar.append(add);try{const snap=await db.ref('stories').once('value'),data=snap.val()||{},now=Date.now();for(const [uid,items] of Object.entries(data)){for(const [id,s] of Object.entries(items||{})){if(!s||!(s.image||s.mediaUrl)||!s.expiresAt||s.expiresAt<now){if(uid===currentUser.uid)db.ref('stories/'+uid+'/'+id).remove();continue}if(uid!==currentUser.uid&&!canSeeStory(uid,s))continue;const b=document.createElement('button');b.className='apStory';b.classList.add('hasStory');const im=document.createElement('img');im.classList.add('story-ring');im.src=s.mediaType==='video'?'https://cdn-icons-png.flaticon.com/512/1179/1179069.png':(s.mediaUrl||s.image);const label=document.createElement('span');label.className='block truncate';label.textContent=s.name||allUsers[uid]?.name||'User';b.append(im,label);b.onclick=()=>viewStory(uid,id,s);bar.append(b)}}}catch(e){console.error(e);}}
-function closeStory(){$('storyModal').classList.add('hidden');const a=$('storyMusicWrap').querySelector('audio');if(a)a.pause();const v=$('storyMediaWrap').querySelector('video');if(v)v.pause();if(storyReactionListener&&storyReactionPath)db.ref(storyReactionPath).off('value',storyReactionListener);storyReactionListener=null;storyReactionPath=null;activeStory=null}
-function viewStory(ownerUid,storyId,s){activeStory={ownerUid,storyId,story:s};$('storyOwnerName').textContent=s.name||allUsers[ownerUid]?.name||'User';$('storyOwnerHandle').textContent='@'+(s.handle||allUsers[ownerUid]?.handle||'');const wrap=$('storyMediaWrap');wrap.innerHTML='';const url=s.mediaUrl||s.image;let media;if(s.mediaType==='video'){media=document.createElement('video');media.src=url;media.controls=true;media.autoplay=true;media.playsInline=true}else{media=document.createElement('img');media.src=url;media.alt='Story'}media.id='storyMedia';wrap.append(media);$('storyMusicWrap').innerHTML='';if(s.musicUrl){const a=document.createElement('audio');a.src=s.musicUrl;a.controls=true;a.autoplay=true;a.className='w-full';$('storyMusicWrap').append(a)}const isOwner=ownerUid===currentUser.uid;$('storyReactionArea').classList.toggle('hidden',isOwner);$('storyOwnerReactionPanel').classList.toggle('hidden',!isOwner);const emojiBox=$('storyEmojiButtons');emojiBox.innerHTML='';['❤️','😂','😍','🔥','👍','😢','👏','😮','🙏','🎉'].forEach(emoji=>{const b=document.createElement('button');b.textContent=emoji;b.onclick=()=>sendStoryReaction(ownerUid,storyId,emoji);emojiBox.append(b)});$('storyModal').classList.remove('hidden');listenStoryReactions(ownerUid,storyId)}
-function listenStoryReactions(ownerUid,storyId){if(storyReactionListener&&storyReactionPath)db.ref(storyReactionPath).off('value',storyReactionListener);storyReactionPath='stories/'+ownerUid+'/'+storyId+'/reactions';storyReactionListener=s=>renderStoryReactionDetails(s.val()||{});db.ref(storyReactionPath).on('value',storyReactionListener)}
-async function sendStoryReaction(ownerUid,storyId,emoji){if(ownerUid===currentUser.uid)return;try{const record={uid:currentUser.uid,name:currentUser.name||'User',handle:currentUser.handle||'',emoji,createdAt:Date.now()};await db.ref('stories/'+ownerUid+'/'+storyId+'/reactions/'+currentUser.uid).set(record)}catch(e){alert('Story reaction পাঠানো যায়নি: '+e.message)}}
-function renderStoryReactionDetails(reactions){const people=Object.values(reactions||{}).filter(Boolean),counts={};people.forEach(r=>{const e=r.emoji||'❤️';counts[e]=(counts[e]||0)+1});$('storyReactionTotal').textContent=people.length+' reactions';const summary=$('storyReactionSummary');summary.innerHTML='';Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([e,c])=>{const tag=document.createElement('span');tag.className='bg-gray-800 rounded-full px-3 py-1 text-sm';tag.textContent=e+' '+c;summary.append(tag)});const list=$('storyReactionPeople');list.innerHTML='';if(!people.length){list.innerHTML='<p class="text-xs text-gray-400">এখনো কেউ রিঅ্যাক্ট করেনি।</p>';return}people.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(r=>{const row=document.createElement('div');row.className='flex items-center justify-between gap-3 bg-gray-800 rounded-xl p-3';const name=document.createElement('div');name.className='min-w-0';const b=document.createElement('b');b.className='block text-sm truncate';b.textContent=r.name||allUsers[r.uid]?.name||'User';const sm=document.createElement('small');sm.className='text-gray-400';sm.textContent='@'+(r.handle||allUsers[r.uid]?.handle||'');name.append(b,sm);const em=document.createElement('span');em.className='text-2xl';em.textContent=r.emoji||'❤️';row.append(name,em);list.append(row)})}
-function showChatMoreMenu(anchor){
- document.querySelector('.chat-menu')?.remove();if(!activeChatUserId)return;
- const uid=activeChatUserId,menu=document.createElement('div');menu.className='chat-menu';menu.style.minWidth='250px';
- const addButton=(label,fn)=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>{menu.remove();fn()};menu.append(b)};
- addButton('👤 Profile',()=>showUserProfile(uid));addButton('✏️ Nickname',()=>setNickname());addButton('🔎 Search in chat',()=>searchInActiveChat());addButton('🎨 Customize theme',()=>setChatTheme());addButton('🖼️ Recent media',()=>showRecentMedia());addButton('🔔 '+(mutedUsers[uid]?'Unmute':'Notifications & sounds'),()=>setAccountState('muted',uid,!mutedUsers[uid]));addButton('💬 Open chat head',()=>alert('Web/PWA version: native chat head requires an Android app wrapper.'));addButton('👥 Create group chat',()=>alert('Group chat database structure is reserved for the next module.'));
- const addSwitch=async(label,key)=>{const row=document.createElement('div');row.className='info-setting-row';const txt=document.createElement('span');txt.textContent=label;const sw=document.createElement('label');sw.className='info-switch';const input=document.createElement('input');input.type='checkbox';const slider=document.createElement('span');slider.className='info-slider';sw.append(input,slider);row.append(txt,sw);menu.append(row);try{const snap=await db.ref('conversationSettings/'+currentUser.uid+'/'+uid+'/'+key).once('value');input.checked=snap.val()!==false}catch(e){input.checked=true}input.addEventListener('change',()=>setConversationSetting(key,input.checked));};
- addSwitch('⌨️ Typing indicator','typingEnabled');addSwitch('✓ Read receipts','readReceipts');
- addButton(blockedUsers[uid]?'Unblock':'🚫 Block',()=>setAccountState('blocked',uid,!blockedUsers[uid]));addButton(restrictedUsers[uid]?'Unrestrict':'Restrict',()=>setAccountState('restricted',uid,!restrictedUsers[uid]));addButton('🗑️ Delete chat',()=>deleteLocalChat(uid));
- document.body.append(menu);const r=anchor.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(innerWidth-260,r.right-245))+'px';menu.style.top=Math.max(8,Math.min(innerHeight-520,r.bottom+4))+'px';
-}
-async function setConversationSetting(key,value){if(!activeChatUserId)return;await db.ref('conversationSettings/'+currentUser.uid+'/'+activeChatUserId+'/'+key).set(!!value)}
-async function toggleConversationSetting(key){if(!activeChatUserId)return;const p='conversationSettings/'+currentUser.uid+'/'+activeChatUserId+'/'+key;const s=await db.ref(p).once('value');await db.ref(p).set(s.val()===false?true:false)}
-function searchInActiveChat(){const q=prompt('চ্যাটে কোন শব্দটি খুঁজবেন?');if(!q)return;const needle=q.toLowerCase();const found=Object.entries(messageRecords).find(([,m])=>String(m.text||'').toLowerCase().includes(needle));if(!found)return alert('কোনো মেসেজ পাওয়া যায়নি।');jumpToMessage(found[0])}
-function showRecentMedia(){const media=Object.values(messageRecords).filter(m=>m&&(m.type==='image'||m.type==='video'));if(!media.length)return alert('এই চ্যাটে এখনো কোনো ছবি বা ভিডিও নেই।');const modal=document.createElement('div');modal.className='fixed inset-0 z-[4000] bg-black/90 p-5 overflow-auto';const close=document.createElement('button');close.textContent='✕ Close';close.className='mb-4';close.onclick=()=>modal.remove();modal.append(close);const grid=document.createElement('div');grid.className='grid grid-cols-3 gap-2';media.slice(-60).reverse().forEach(m=>{const el=document.createElement(m.type==='video'?'video':'img');el.src=m.url;if(m.type==='video')el.controls=true;el.className='w-full aspect-square object-cover rounded';grid.append(el)});modal.append(grid);document.body.append(modal)}
-async function deleteLocalChat(uid){if(!confirm('আপনার Chat list থেকে এই conversation মুছবেন?'))return;await db.ref('chatMeta/'+currentUser.uid+'/'+uid).remove();await db.ref('pinnedChats/'+currentUser.uid+'/'+uid).remove();closeChat()}
-/* ================= END UPGRADE ================= */
-
-</script>
- <style>
-/* ================================
-   APCHAT MESSENGER UPGRADE
-================================ */
-
-/* Fixed chat theme background */
-#messagesContainer{
-  background-position:center center;
-  background-size:cover;
-  background-repeat:no-repeat;
-  background-attachment:fixed;
-}
-
-/* Messenger style chat item */
-.ap-chat-row{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:11px 13px;
-  cursor:pointer;
-  position:relative;
-  border-bottom:1px solid rgba(75,85,99,.18);
-}
-.ap-chat-row:hover{background:#111827}
-
-.ap-avatar-wrap{
-  position:relative;
-  width:54px;
-  height:54px;
-  flex:none;
-}
-
-.ap-chat-avatar{
-  width:54px;
-  height:54px;
-  object-fit:cover;
-  border-radius:50%;
-  background:#1f2937;
-}
-
-.ap-online-dot{
-  width:14px;
-  height:14px;
-  position:absolute;
-  right:0;
-  bottom:1px;
-  border-radius:50%;
-  background:#22c55e;
-  border:2px solid #111827;
-}
-
-.ap-story-ring{
-  padding:3px;
-  border-radius:50%;
-  background:linear-gradient(45deg,#ef4444,#a855f7,#2563eb);
-}
-
-.ap-story-ring .ap-chat-avatar{
-  border:2px solid #111827;
-}
-
-.ap-chat-main{
-  min-width:0;
-  flex:1;
-}
-
-.ap-chat-top,
-.ap-chat-bottom{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-
-.ap-chat-name{
-  font-size:15px;
-  font-weight:700;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-
-.ap-chat-preview{
-  font-size:12px;
-  color:#9ca3af;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-  max-width:220px;
-}
-
-.ap-chat-time{
-  font-size:10px;
-  color:#9ca3af;
-  white-space:nowrap;
-}
-
-.ap-unread-badge{
-  min-width:20px;
-  height:20px;
-  padding:0 6px;
-  border-radius:999px;
-  background:#ef4444;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:10px;
-  font-weight:bold;
-}
-
-.ap-pinned-label{
-  font-size:10px;
-  color:#60a5fa;
-  margin-right:4px;
-}
-
-/* Emoji-only message */
-.ap-emoji-message{
-  background:transparent!important;
-  padding:0!important;
-  font-size:42px!important;
-  line-height:1.25;
-  box-shadow:none!important;
-}
-
-/* Selected message timestamp */
-.ap-message-time{
-  font-size:10px;
-  opacity:.65;
-  margin-top:4px;
-  display:none;
-}
-
-.ap-message-time.show{
-  display:block;
-}
-
-/* Long press menu */
-.ap-message-menu{
-  position:fixed;
-  z-index:9999;
-  background:#1f2937;
-  border:1px solid #374151;
-  border-radius:14px;
-  padding:6px;
-  display:flex;
-  gap:4px;
-  box-shadow:0 10px 30px rgba(0,0,0,.5);
-}
-
-.ap-message-menu button{
-  background:#374151;
-  color:white;
-  border:0;
-  border-radius:10px;
-  padding:8px 12px;
-  font-size:12px;
-}
-
-/* Story viewer */
-#apStoryViewer{
-  position:fixed;
-  inset:0;
-  z-index:99999;
-  background:#000;
-  display:none;
-  flex-direction:column;
-}
-
-#apStoryViewer.show{display:flex}
-
-#apStoryImage{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-}
-
-.ap-story-header{
-  position:absolute;
-  z-index:2;
-  top:0;
-  left:0;
-  width:100%;
-  padding:15px;
-  background:linear-gradient(#0009,transparent);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-/* Real sliding switches */
-.ap-switch-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:12px 0;
-}
-
-.ap-switch{
-  position:relative;
-  width:48px;
-  height:27px;
-  display:inline-block;
-}
-
-.ap-switch input{
-  opacity:0;
-  width:0;
-  height:0;
-}
-
-.ap-slider{
-  position:absolute;
-  cursor:pointer;
-  inset:0;
-  background:#4b5563;
-  border-radius:999px;
-  transition:.25s;
-}
-
-.ap-slider:before{
-  content:"";
-  position:absolute;
-  width:21px;
-  height:21px;
-  left:3px;
-  top:3px;
-  background:white;
-  border-radius:50%;
-  transition:.25s;
-}
-
-.ap-switch input:checked + .ap-slider{
-  background:#2563eb;
-}
-
-.ap-switch input:checked + .ap-slider:before{
-  transform:translateX(21px);
-}
-
-/* Story ring */
-.ap-story-button{
-  position:relative;
-}
-
-#activeChatInterface header{
-  position:relative;
-  z-index:5;
-}
-</style>
-
-
-<!-- ================================
-     FULL SCREEN STORY VIEWER
-================================= -->
-<div id="apStoryViewer">
-  <div class="ap-story-header">
-    <div class="flex items-center gap-3">
-      <img id="apStoryAvatar" class="w-10 h-10 rounded-full object-cover">
-      <div>
-        <div id="apStoryName" class="font-bold text-sm"></div>
-        <div id="apStoryTime" class="text-xs text-gray-300"></div>
-      </div>
-    </div>
-    <button onclick="closeAPStory()" class="p-2 text-white text-xl">✕</button>
-  </div>
-  <img id="apStoryImage" src="">
-</div>
-
-
-<!-- ================================
-     CHAT INFO MODAL
-================================= -->
-<div id="apChatInfoModal"
- class="hidden fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center">
-
-  <div class="bg-gray-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto">
-
-    <div class="flex justify-between items-center mb-5">
-      <h2 class="font-bold text-lg">Chat Info</h2>
-      <button onclick="closeAPChatInfo()" class="text-gray-400 text-xl">✕</button>
-    </div>
-
-    <div class="ap-switch-row">
-      <span>Typing Indicator</span>
-      <label class="ap-switch">
-        <input id="apTypingSwitch" type="checkbox" checked
-          onchange="saveAPChatSetting('typingEnabled',this.checked)">
-        <span class="ap-slider"></span>
-      </label>
-    </div>
-
-    <div class="ap-switch-row">
-      <span>Read Receipts</span>
-      <label class="ap-switch">
-        <input id="apReadSwitch" type="checkbox" checked
-          onchange="saveAPChatSetting('readReceipts',this.checked)">
-        <span class="ap-slider"></span>
-      </label>
-    </div>
-
-    <button onclick="setAPNickname()"
-      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-3">
-      Set Nickname
-    </button>
-
-    <button onclick="toggleAPPinChat()"
-      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-2">
-      Pin / Unpin Chat
-    </button>
-
-    <button onclick="toggleAPMute()"
-      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-2">
-      Notifications & Sound
-    </button>
-
-    <button onclick="apBlockActiveUser()"
-      class="w-full text-left p-3 rounded-xl bg-red-950 text-red-300 mt-2">
-      Block User
-    </button>
-
-    <button onclick="apRestrictActiveUser()"
-      class="w-full text-left p-3 rounded-xl bg-yellow-950 text-yellow-300 mt-2">
-      Restrict User
-    </button>
-
-  </div>
-</div>
-
-
-<script>
-/* =============================================
-   APCHAT MESSENGER FEATURE EXTENSION
-   Existing Login/Register functions untouched
-============================================= */
-
-let apChatMeta = {};
-let apNicknames = {};
-let apUserStatus = {};
-let apConversationListener = null;
-let apMetaListener = null;
-let apStatusListener = null;
-let apLongPressTimer = null;
-
-
-/* Unique conversation ID */
-function apConversationId(a,b){
-  return [a,b].sort().join('_');
-}
-
-
-/* Emoji detection */
-function apIsEmojiOnly(text){
-  if(!text) return false;
-
-  const cleaned = text.trim();
-
-  /* No normal letters or numbers */
-  if(/[a-zA-Z0-9\u0980-\u09FF]/.test(cleaned)) return false;
-
-  /* Must contain emoji-like characters */
-  return cleaned.length > 0 &&
-    /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(cleaned);
-}
-
-
-/* Time formatting */
-function apFormatTime(timestamp){
-  if(!timestamp) return '';
-
-  const d = new Date(timestamp);
-  const now = new Date();
-
-  const diff = now - d;
-
-  if(diff < 60000) return 'Now';
-  if(diff < 3600000) return Math.floor(diff/60000)+'m';
-
-  if(d.toDateString() === now.toDateString()){
-    return d.toLocaleTimeString([],{
-      hour:'2-digit',
-      minute:'2-digit'
-    });
-  }
-
-  return d.toLocaleDateString([],{
-    month:'short',
-    day:'numeric'
-  });
-}
-
-
-function apLastActive(timestamp){
-  if(!timestamp) return 'Offline';
-
-  const diff = Date.now() - timestamp;
-
-  if(diff < 60000) return 'Active now';
-  if(diff < 3600000)
-    return Math.floor(diff/60000)+' minutes ago';
-
-  if(diff < 86400000)
-    return Math.floor(diff/3600000)+' hours ago';
-
-  return 'Active '+new Date(timestamp).toLocaleDateString();
-}
-
-
-/* =============================================
-   USER ONLINE STATUS
-============================================= */
-
-function apStartPresence(){
-
-  if(!currentUser) return;
-
-  const ref = db.ref('userStatus/'+currentUser.uid);
-
-  const onlineData = {
-    online:true,
-    lastActive:firebase.database.ServerValue.TIMESTAMP
-  };
-
-  ref.set(onlineData);
-
-  ref.onDisconnect().set({
-    online:false,
-    lastActive:firebase.database.ServerValue.TIMESTAMP
-  });
-
-  db.ref('userStatus').on('value',snap=>{
-    apUserStatus = snap.val() || {};
-    if(typeof renderUI === 'function') apRenderMessengerChatList();
-  });
-}
-
-
-/* =============================================
-   NICKNAMES
-============================================= */
-
-function apListenNicknames(){
-
-  if(!currentUser) return;
-
-  db.ref('nicknames/'+currentUser.uid).on('value',snap=>{
-    apNicknames = snap.val() || {};
-
-    if(activeChatUserId){
-      const u = allUsers[activeChatUserId] || {};
-      $('activeChatName').textContent =
-        apNicknames[activeChatUserId] ||
-        u.name ||
-        'User';
-    }
-
-    apRenderMessengerChatList();
-  });
-}
-
-
-async function setAPNickname(){
-
-  if(!currentUser || !activeChatUserId) return;
-
-  const u = allUsers[activeChatUserId] || {};
-
-  const old = apNicknames[activeChatUserId] || '';
-
-  const name = prompt(
-    'এই বন্ধুর জন্য Nickname লিখুন:',
-    old
-  );
-
-  if(name === null) return;
-
-  const clean = name.trim().slice(0,40);
-
+async function savePrivacySettings(){
+  const v=$('privacySelect').value;
   try{
-
-    if(clean){
-      await db.ref(
-        'nicknames/'+currentUser.uid+'/'+activeChatUserId
-      ).set(clean);
-    }else{
-      await db.ref(
-        'nicknames/'+currentUser.uid+'/'+activeChatUserId
-      ).remove();
-    }
-
-  }catch(e){
-    alert('Nickname save হয়নি: '+e.message);
-  }
+    await db.ref().update({['profiles/'+currentUser.uid+'/privacy']:v,['profileDirectory/'+currentUser.uid+'/privacy']:v});
+    currentUser.privacy=v;
+    $('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;
+    closePrivacyModal();
+    renderUI();
+    alert('Privacy updated successfully');
+  }catch(e){alert('Save failed: '+e.message);}
 }
 
-
-/* =============================================
-   CHAT META / LAST MESSAGE / UNREAD
-============================================= */
-
-function apListenChatMeta(){
-
-  if(!currentUser) return;
-
-  db.ref('chatMeta/'+currentUser.uid).on('value',snap=>{
-
-    apChatMeta = snap.val() || {};
-
-    apRenderMessengerChatList();
-
-  });
-}
-
-
-function apGetDisplayName(uid){
-
-  const u = allUsers[uid] || {};
-
-  return apNicknames[uid] ||
-    u.name ||
-    'APCHAT User';
-}
-
-
-function apRenderMessengerChatList(){
-
-  if(!currentUser) return;
-
-  const container = $('chatsView');
-
-  if(!container) return;
-
-  const entries = Object.entries(apChatMeta)
-    .filter(([uid])=>uid !== currentUser.uid)
-    .sort((a,b)=>{
-
-      const A = a[1] || {};
-      const B = b[1] || {};
-
-      const pinA = A.pinned ? 1 : 0;
-      const pinB = B.pinned ? 1 : 0;
-
-      if(pinA !== pinB) return pinB-pinA;
-
-      return (B.lastMessageAt||0) -
-        (A.lastMessageAt||0);
-    });
-
-  container.innerHTML='';
-
-  if(!entries.length){
-
-    container.innerHTML =
-      '<div class="p-6 text-center text-sm text-gray-500">'+
-      'No conversations yet.'+
-      '</div>';
-
-    return;
-  }
-
-  entries.forEach(([uid,meta])=>{
-
-    const u = allUsers[uid] || {};
-
-    const status = apUserStatus[uid] || {};
-
-    const avatar =
-      u.avatar ||
-      avatarFallback;
-
-    const name =
-      apGetDisplayName(uid);
-
-    const preview =
-      meta.lastMessage ||
-      'Start a conversation';
-
-    const unread =
-      Number(meta.unreadCount || 0);
-
-    const isStory =
-      u.hasActiveStory === true;
-
-    const row = document.createElement('div');
-
-    row.className='ap-chat-row';
-
-    const avatarClass =
-      isStory
-      ? 'ap-avatar-wrap ap-story-ring'
-      : 'ap-avatar-wrap';
-
-    row.innerHTML=`
-
-      <div class="${avatarClass}">
-
-        <img
-          src="${esc(avatar)}"
-          class="ap-chat-avatar"
-        >
-
-        ${status.online
-          ? '<span class="ap-online-dot"></span>'
-          : ''
-        }
-
-      </div>
-
-      <div class="ap-chat-main">
-
-        <div class="ap-chat-top">
-
-          <div class="ap-chat-name">
-            ${meta.pinned
-              ? '<span class="ap-pinned-label">📌</span>'
-              : ''
-            }
-            ${esc(name)}
-          </div>
-
-          <span class="ap-chat-time">
-            ${apFormatTime(meta.lastMessageAt)}
-          </span>
-
-        </div>
-
-        <div class="ap-chat-bottom">
-
-          <div class="ap-chat-preview">
-            ${esc(preview)}
-          </div>
-
-          ${unread>0
-            ? `<span class="ap-unread-badge">${
-                unread>99?'99+':unread
-              }</span>`
-            : ''
-          }
-
-        </div>
-
-      </div>
-    `;
-
-    row.onclick = ()=>openChat(uid);
-
-    container.appendChild(row);
-  });
-}
-
-
-/* =============================================
-   PIN CHAT - MAXIMUM 3
-============================================= */
-
-async function toggleAPPinChat(){
-
-  if(!currentUser || !activeChatUserId) return;
-
-  const ref =
-    db.ref(
-      'chatMeta/'+
-      currentUser.uid+'/'+
-      activeChatUserId
-    );
-
-  const snap = await ref.once('value');
-
-  const meta = snap.val() || {};
-
-  if(!meta.pinned){
-
-    const allSnap =
-      await db.ref(
-        'chatMeta/'+currentUser.uid
-      ).once('value');
-
-    const all = allSnap.val() || {};
-
-    const count =
-      Object.values(all)
-      .filter(x=>x && x.pinned)
-      .length;
-
-    if(count >= 3){
-
-      alert(
-        'সর্বোচ্চ ৩টি Chat Pin করা যাবে।'
-      );
-
-      return;
-    }
-  }
-
-  await ref.update({
-    pinned:!meta.pinned
-  });
-}
-
-
-/* =============================================
-   CHAT SETTINGS
-============================================= */
-
-async function saveAPChatSetting(key,value){
-
-  if(!currentUser || !activeChatUserId) return;
-
-  const cid =
-    apConversationId(
-      currentUser.uid,
-      activeChatUserId
-    );
-
+/* Stories & Viewers list fully restored */
+async function uploadStory(file){
+  if(!file)return;
   try{
-
-    await db.ref(
-      'conversationSettings/'+
-      currentUser.uid+'/'+cid+'/'+key
-    ).set(value);
-
-  }catch(e){
-    alert('Setting save হয়নি: '+e.message);
-  }
+    pendingStoryFile=file; const preview=$('storyPreview'); preview.innerHTML='';
+    const url=URL.createObjectURL(file), isVideo=file.type.startsWith('video/');
+    const media=document.createElement(isVideo?'video':'img'); media.src=url; media.className='w-full rounded-lg max-h-[220px] object-contain'; preview.append(media);
+    $('storyPrivacyModal').classList.remove('hidden');
+  }catch(e){alert(e.message);}
 }
-
-
-async function apLoadChatSettings(){
-
-  if(!currentUser || !activeChatUserId) return;
-
-  const cid =
-    apConversationId(
-      currentUser.uid,
-      activeChatUserId
-    );
-
-  const snap =
-    await db.ref(
-      'conversationSettings/'+
-      currentUser.uid+'/'+cid
-    ).once('value');
-
-  const data = snap.val() || {};
-
-  $('apTypingSwitch').checked =
-    data.typingEnabled !== false;
-
-  $('apReadSwitch').checked =
-    data.readReceipts !== false;
-}
-
-
-function openAPChatInfo(){
-
-  if(!activeChatUserId) return;
-
-  $('apChatInfoModal')
-    .classList.remove('hidden');
-
-  apLoadChatSettings();
-}
-
-
-function closeAPChatInfo(){
-
-  $('apChatInfoModal')
-    .classList.add('hidden');
-}
-
-
-async function toggleAPMute(){
-
-  if(!currentUser || !activeChatUserId) return;
-
-  const cid =
-    apConversationId(
-      currentUser.uid,
-      activeChatUserId
-    );
-
-  const ref =
-    db.ref(
-      'conversationSettings/'+
-      currentUser.uid+'/'+cid+'/muted'
-    );
-
-  const snap = await ref.once('value');
-
-  await ref.set(!snap.val());
-
-  alert(
-    snap.val()
-      ? 'Notifications চালু হয়েছে।'
-      : 'Notifications mute করা হয়েছে।'
-  );
-}
-
-
-/* =============================================
-   BLOCK / RESTRICT
-============================================= */
-
-async function apBlockActiveUser(){
-
-  if(!activeChatUserId || !currentUser) return;
-
-  if(!confirm('এই User-কে Block করবেন?'))
-    return;
-
+function cancelStory(){$('storyPrivacyModal').classList.add('hidden'); pendingStoryFile=null;}
+async function postStory(){
+  if(!pendingStoryFile)return;
+  const btn=$('postStoryBtn'); btn.disabled=true; btn.textContent='Uploading...';
   try{
-
-    await db.ref(
-      'blocked/'+
-      currentUser.uid+'/'+
-      activeChatUserId
-    ).set(true);
-
-    closeAPChatInfo();
-
-    if(typeof closeChat === 'function')
-      closeChat();
-
-  }catch(e){
-
-    alert('Block করা যায়নি: '+e.message);
-  }
-}
-
-
-async function apRestrictActiveUser(){
-
-  if(!activeChatUserId || !currentUser) return;
-
-  try{
-
-    const ref =
-      db.ref(
-        'restricted/'+
-        currentUser.uid+'/'+
-        activeChatUserId
-      );
-
-    const snap =
-      await ref.once('value');
-
-    await ref.set(!snap.val());
-
-    alert(
-      snap.val()
-        ? 'User Unrestricted হয়েছে।'
-        : 'User Restricted হয়েছে।'
-    );
-
-  }catch(e){
-
-    alert('পরিবর্তন করা যায়নি: '+e.message);
-  }
-}
-
-
-/* =============================================
-   MESSAGE LONG PRESS
-============================================= */
-
-function apShowMessageMenu(message,element){
-
-  document
-    .querySelector('.ap-message-menu')
-    ?.remove();
-
-  const menu =
-    document.createElement('div');
-
-  menu.className='ap-message-menu';
-
-  const react =
-    document.createElement('button');
-
-  react.textContent='❤️';
-
-  react.onclick=()=>{
-
-    alert('Reaction system next update-এ message-এর সঙ্গে save করা যাবে।');
-
-    menu.remove();
-  };
-
-
-  const reply =
-    document.createElement('button');
-
-  reply.textContent='Reply';
-
-  reply.onclick=()=>{
-
-    const input=$('messageInput');
-
-    input.value =
-      '↩ '+(message.text||'').slice(0,60)+'\n';
-
-    input.focus();
-
-    menu.remove();
-  };
-
-
-  const del =
-    document.createElement('button');
-
-  del.textContent='Delete';
-
-  del.onclick=async()=>{
-
-    if(message.sender !== currentUser.uid){
-
-      alert(
-        'আপনি শুধু নিজের Message Delete করতে পারবেন।'
-      );
-
-      menu.remove();
-
-      return;
-    }
-
-    if(!confirm('এই Message Delete করবেন?')){
-
-      menu.remove();
-
-      return;
-    }
-
-    menu.remove();
-  };
-
-
-  menu.append(
-    react,
-    reply,
-    del
-  );
-
-  document.body.appendChild(menu);
-
-  const r =
-    element.getBoundingClientRect();
-
-  menu.style.left =
-    Math.max(
-      8,
-      Math.min(
-        window.innerWidth-240,
-        r.left
-      )
-    )+'px';
-
-  menu.style.top =
-    Math.max(
-      8,
-      r.top-55
-    )+'px';
-
-
-  setTimeout(()=>{
-
-    const close=e=>{
-
-      if(!menu.contains(e.target)){
-
-        menu.remove();
-
-        document.removeEventListener(
-          'pointerdown',
-          close
-        );
-      }
-    };
-
-    document.addEventListener(
-      'pointerdown',
-      close
-    );
-
-  },100);
-}
-
-
-function apBindMessageActions(
-  bubble,
-  message
-){
-
-  let timer=null;
-
-  bubble.addEventListener(
-    'touchstart',
-    ()=>{
-
-      timer=setTimeout(()=>{
-
-        apShowMessageMenu(
-          message,
-          bubble
-        );
-
-      },700);
-
-    },
-    {passive:true}
-  );
-
-  [
-    'touchend',
-    'touchmove',
-    'touchcancel'
-  ].forEach(event=>{
-
-    bubble.addEventListener(
-      event,
-      ()=>clearTimeout(timer)
-    );
-
-  });
-
-
-  bubble.addEventListener(
-    'click',
-    ()=>{
-
-      const time =
-        bubble.querySelector(
-          '.ap-message-time'
-        );
-
-      if(time)
-        time.classList.toggle('show');
-
-    }
-  );
-}
-
-
-/* =============================================
-   TYPING INDICATOR
-============================================= */
-
-let apTypingTimeout=null;
-
-function apStartTyping(){
-
-  if(!currentUser ||
-     !activeChatUserId)
-    return;
-
-  const cid =
-    apConversationId(
-      currentUser.uid,
-      activeChatUserId
-    );
-
-  const ref =
-    db.ref(
-      'typing/'+
-      cid+'/'+
-      currentUser.uid
-    );
-
-  ref.set(true);
-
-  clearTimeout(apTypingTimeout);
-
-  apTypingTimeout=setTimeout(()=>{
-
-    ref.remove();
-
-  },1500);
-}
-
-
-$('messageInput')?.addEventListener(
-  'input',
-  apStartTyping
-);
-
-
-/* =============================================
-   NOTIFICATIONS
-============================================= */
-
-async function apEnableNotifications(){
-
-  if(!('Notification' in window))
-    return;
-
-  if(Notification.permission === 'default'){
-
-    try{
-      await Notification.requestPermission();
-    }catch(e){}
-  }
-}
-
-
-function apShowNotification(
-  title,
-  body
-){
-
-  if(
-    'Notification' in window &&
-    Notification.permission === 'granted' &&
-    document.hidden
-  ){
-
-    try{
-
-      new Notification(title,{
-        body:body,
-        icon:'./icon-192.png'
-      });
-
-    }catch(e){}
-  }
-}
-
-
-/* =============================================
-   STORIES
-   24-hour expiry + full screen viewer
-============================================= */
-
-async function apLoadUserStory(uid){
-
-  try{
-
-    const snap =
-      await db.ref(
-        'stories/'+uid
-      ).once('value');
-
-    const stories =
-      snap.val() || {};
-
+    const file=pendingStoryFile, isVideo=file.type.startsWith('video/');
+    const mediaUrl=await uploadToCloudinary(file, isVideo?'video':'image');
+    const key=db.ref('stories/'+currentUser.uid).push().key;
     const now=Date.now();
-
-    const valid =
-      Object.entries(stories)
-      .filter(([id,s])=>
-        s &&
-        s.createdAt &&
-        now-s.createdAt < 86400000
-      )
-      .sort((a,b)=>
-        (a[1].createdAt||0)-
-        (b[1].createdAt||0)
-      );
-
-    return valid;
-
-  }catch(e){
-
-    return [];
-  }
+    const record={mediaUrl,mediaType:isVideo?'video':'image',name:currentUser.name,handle:currentUser.handle,createdAt:now,expiresAt:now+86400000};
+    await db.ref('stories/'+currentUser.uid+'/'+key).set(record);
+    cancelStory(); alert('Story posted'); loadStories();
+  }catch(e){alert(e.message);}finally{btn.disabled=false; btn.textContent='Post Story';}
 }
 
-
-async function openAPStory(uid){
-
-  const stories =
-    await apLoadUserStory(uid);
-
-  if(!stories.length){
-
-    alert('কোনো Active Story নেই।');
-
-    return;
-  }
-
-  const story =
-    stories[0][1];
-
-  const user =
-    allUsers[uid] || {};
-
-  $('apStoryViewer')
-    .classList.add('show');
-
-  $('apStoryImage').src =
-    story.url || '';
-
-  $('apStoryAvatar').src =
-    user.avatar ||
-    avatarFallback;
-
-  $('apStoryName').textContent =
-    user.name ||
-    'APCHAT User';
-
-  $('apStoryTime').textContent =
-    apFormatTime(story.createdAt);
-
-  /* Save story view */
-  if(currentUser){
-
-    db.ref(
-      'storyViews/'+
-      uid+'/'+
-      stories[0][0]+'/'+
-      currentUser.uid
-    ).set({
-      viewedAt:
-        firebase.database.ServerValue.TIMESTAMP
-    }).catch(()=>{});
-  }
-}
-
-
-function closeAPStory(){
-
-  $('apStoryViewer')
-    .classList.remove('show');
-
-  $('apStoryImage').src='';
-}
-
-
-/* =============================================
-   ADD INFO BUTTON TO CHAT HEADER
-============================================= */
-
-function apAddInfoButton(){
-
-  const header =
-    document.querySelector(
-      '#activeChatInterface header'
-    );
-
-  if(!header) return;
-
-  if(
-    document.getElementById(
-      'apChatInfoBtn'
-    )
-  ) return;
-
-  const button =
-    document.createElement('button');
-
-  button.id='apChatInfoBtn';
-
-  button.className=
-    'ml-auto p-2 text-gray-300';
-
-  button.innerHTML='ℹ️';
-
-  button.onclick=openAPChatInfo;
-
-  header.appendChild(button);
-}
-
-
-/* =============================================
-   INITIALIZATION
-============================================= */
-
-const apOriginalShowApp =
-  typeof showApp === 'function'
-  ? showApp
-  : null;
-
-
-if(apOriginalShowApp){
-
-  window.showApp=function(){
-
-    apOriginalShowApp();
-
-    setTimeout(()=>{
-
-      apStartPresence();
-
-      apListenNicknames();
-
-      apListenChatMeta();
-
-      apAddInfoButton();
-
-      apEnableNotifications();
-
-    },300);
-  };
-}
-
-
-/* Refresh info button after opening chat */
-
-const apOriginalOpenChat =
-  typeof openChat === 'function'
-  ? openChat
-  : null;
-
-
-if(apOriginalOpenChat){
-
-  window.openChat=function(uid){
-
-    apOriginalOpenChat(uid);
-
-    setTimeout(()=>{
-
-      apAddInfoButton();
-
-      apLoadChatSettings();
-
-      /* Clear unread messages */
-
-      if(currentUser){
-
-        db.ref(
-          'chatMeta/'+
-          currentUser.uid+'/'+uid+
-          '/unreadCount'
-        ).set(0).catch(()=>{});
+async function loadStories(){
+  const bar=$('apStories'); if(!bar||!currentUser)return;
+  bar.innerHTML='';
+  const add=document.createElement('button'); add.className='apStory'; add.innerHTML='<span style="display:block;font-size:30px">＋</span>Add Story'; add.onclick=()=>$('storyInput').click(); bar.append(add);
+  try{
+    const snap=await db.ref('stories').once('value'), data=snap.val()||{}, now=Date.now();
+    for(const [uid,items] of Object.entries(data)){
+      for(const [id,s] of Object.entries(items||{})){
+        if(!s||!s.mediaUrl||!s.expiresAt||s.expiresAt<now)continue;
+        const b=document.createElement('button'); b.className='apStory';
+        const im=document.createElement('img'); im.className='story-ring'; im.src=s.mediaUrl;
+        const label=document.createElement('span'); label.className='block truncate'; label.textContent=s.name||'User';
+        b.append(im,label); b.onclick=()=>viewStory(uid,id,s); bar.append(b);
       }
-
-    },100);
-  };
+    }
+  }catch(e){console.error(e);}
 }
 
+function viewStory(ownerUid,storyId,s){
+  activeStory={ownerUid,storyId,story:s};
+  $('storyOwnerName').textContent=s.name||'User';
+  $('storyOwnerHandle').textContent='@'+(s.handle||'');
+  const wrap=$('storyMediaWrap'); wrap.innerHTML='';
+  const media=document.createElement(s.mediaType==='video'?'video':'img');
+  media.src=s.mediaUrl; if(s.mediaType==='video'){media.controls=true; media.autoplay=true;} media.id='storyMedia'; wrap.append(media);
+  
+  const isOwner=(ownerUid===currentUser.uid);
+  $('storyReactionArea').classList.toggle('hidden',isOwner);
+  $('storyOwnerReactionPanel').classList.toggle('hidden',!isOwner);
 
-/* Update presence when page visibility changes */
-/* APCHAT v12: removed temporary Firebase diagnostic interval and test alerts. */
+  if(isOwner){
+    // Listen to views and reactions for story owner
+    db.ref('storyViews/'+ownerUid+'/'+storyId).on('value', snap=>{
+      const views = snap.val() || {};
+      const viewersCount = Object.keys(views).length;
+      $('storyReactionTotal').textContent = viewersCount + ' views';
+      const list=$('storyOwnerReactionPanel').querySelector('#storyReactionPeople');
+      list.innerHTML='';
+      if(viewersCount===0){
+        list.innerHTML='<p class="text-xs text-gray-400">কেউ এখনো স্টোরি দেখেনি (No views yet)।</p>';
+      } else {
+        Object.keys(views).forEach(viewerId=>{
+          db.ref('profiles/'+viewerId).once('value').then(pSnap=>{
+            const p = pSnap.val() || {};
+            const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2 text-xs';
+            row.innerHTML=`<span><b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span><span class="text-green-400 font-bold">Seen ✓</span>`;
+            list.append(row);
+          });
+        });
+      }
+    });
+  } else {
+    // Record story view for viewer
+    db.ref('storyViews/'+ownerUid+'/'+storyId+'/'+currentUser.uid).set({viewedAt: Date.now()}).catch(()=>{});
+  }
+
+  const emojiBox=$('storyEmojiButtons'); emojiBox.innerHTML='';
+  ['❤️','😂','😍','🔥','👍','😢'].forEach(emoji=>{
+    const b=document.createElement('button'); b.textContent=emoji;
+    b.onclick=()=>sendStoryReaction(ownerUid,storyId,emoji); emojiBox.append(b);
+  });
+  $('storyModal').classList.remove('hidden');
+}
+
+function closeStory(){
+  $('storyModal').classList.add('hidden');
+  const v=$('storyMediaWrap').querySelector('video'); if(v)v.pause();
+  activeStory=null;
+}
+
+async function sendStoryReaction(ownerUid,storyId,emoji){
+  if(ownerUid===currentUser.uid)return;
+  try{
+    await db.ref('stories/'+ownerUid+'/'+storyId+'/reactions/'+currentUser.uid).set({uid:currentUser.uid,name:currentUser.name,emoji,createdAt:Date.now()});
+    alert('Reaction sent!');
+  }catch(e){alert(e.message);}
+}
+
+function showChatMoreMenu(anchor){
+  document.querySelector('.chat-menu')?.remove(); if(!activeChatUserId)return;
+  const uid=activeChatUserId, menu=document.createElement('div'); menu.className='chat-menu';
+  const addButton=(label,fn)=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{menu.remove(); fn();}; menu.append(b);};
+  addButton('👤 Profile',()=>alert(uid));
+  addButton('🗑️ Delete chat',()=>deleteLocalChat(uid));
+  document.body.append(menu);
+  const r=anchor.getBoundingClientRect(); menu.style.left=Math.max(8,Math.min(innerWidth-260,r.right-245))+'px'; menu.style.top=(r.bottom+4)+'px';
+}
+async function deleteLocalChat(uid){if(!confirm('চ্যাট মুছবেন?'))return; await db.ref('chatMeta/'+currentUser.uid+'/'+uid).remove(); closeChat();}
 </script>
 </body>
 </html>
