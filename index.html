@@ -340,5 +340,1356 @@ async function deleteLocalChat(uid){if(!confirm('আপনার Chat list থ�
 /* ================= END UPGRADE ================= */
 
 </script>
+ <style>
+/* ================================
+   APCHAT MESSENGER UPGRADE
+================================ */
+
+/* Fixed chat theme background */
+#messagesContainer{
+  background-position:center center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+}
+
+/* Messenger style chat item */
+.ap-chat-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 13px;
+  cursor:pointer;
+  position:relative;
+  border-bottom:1px solid rgba(75,85,99,.18);
+}
+.ap-chat-row:hover{background:#111827}
+
+.ap-avatar-wrap{
+  position:relative;
+  width:54px;
+  height:54px;
+  flex:none;
+}
+
+.ap-chat-avatar{
+  width:54px;
+  height:54px;
+  object-fit:cover;
+  border-radius:50%;
+  background:#1f2937;
+}
+
+.ap-online-dot{
+  width:14px;
+  height:14px;
+  position:absolute;
+  right:0;
+  bottom:1px;
+  border-radius:50%;
+  background:#22c55e;
+  border:2px solid #111827;
+}
+
+.ap-story-ring{
+  padding:3px;
+  border-radius:50%;
+  background:linear-gradient(45deg,#ef4444,#a855f7,#2563eb);
+}
+
+.ap-story-ring .ap-chat-avatar{
+  border:2px solid #111827;
+}
+
+.ap-chat-main{
+  min-width:0;
+  flex:1;
+}
+
+.ap-chat-top,
+.ap-chat-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.ap-chat-name{
+  font-size:15px;
+  font-weight:700;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.ap-chat-preview{
+  font-size:12px;
+  color:#9ca3af;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  max-width:220px;
+}
+
+.ap-chat-time{
+  font-size:10px;
+  color:#9ca3af;
+  white-space:nowrap;
+}
+
+.ap-unread-badge{
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#ef4444;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  font-weight:bold;
+}
+
+.ap-pinned-label{
+  font-size:10px;
+  color:#60a5fa;
+  margin-right:4px;
+}
+
+/* Emoji-only message */
+.ap-emoji-message{
+  background:transparent!important;
+  padding:0!important;
+  font-size:42px!important;
+  line-height:1.25;
+  box-shadow:none!important;
+}
+
+/* Selected message timestamp */
+.ap-message-time{
+  font-size:10px;
+  opacity:.65;
+  margin-top:4px;
+  display:none;
+}
+
+.ap-message-time.show{
+  display:block;
+}
+
+/* Long press menu */
+.ap-message-menu{
+  position:fixed;
+  z-index:9999;
+  background:#1f2937;
+  border:1px solid #374151;
+  border-radius:14px;
+  padding:6px;
+  display:flex;
+  gap:4px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+
+.ap-message-menu button{
+  background:#374151;
+  color:white;
+  border:0;
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:12px;
+}
+
+/* Story viewer */
+#apStoryViewer{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:#000;
+  display:none;
+  flex-direction:column;
+}
+
+#apStoryViewer.show{display:flex}
+
+#apStoryImage{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.ap-story-header{
+  position:absolute;
+  z-index:2;
+  top:0;
+  left:0;
+  width:100%;
+  padding:15px;
+  background:linear-gradient(#0009,transparent);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* Real sliding switches */
+.ap-switch-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 0;
+}
+
+.ap-switch{
+  position:relative;
+  width:48px;
+  height:27px;
+  display:inline-block;
+}
+
+.ap-switch input{
+  opacity:0;
+  width:0;
+  height:0;
+}
+
+.ap-slider{
+  position:absolute;
+  cursor:pointer;
+  inset:0;
+  background:#4b5563;
+  border-radius:999px;
+  transition:.25s;
+}
+
+.ap-slider:before{
+  content:"";
+  position:absolute;
+  width:21px;
+  height:21px;
+  left:3px;
+  top:3px;
+  background:white;
+  border-radius:50%;
+  transition:.25s;
+}
+
+.ap-switch input:checked + .ap-slider{
+  background:#2563eb;
+}
+
+.ap-switch input:checked + .ap-slider:before{
+  transform:translateX(21px);
+}
+
+/* Story ring */
+.ap-story-button{
+  position:relative;
+}
+
+#activeChatInterface header{
+  position:relative;
+  z-index:5;
+}
+</style>
+
+
+<!-- ================================
+     FULL SCREEN STORY VIEWER
+================================= -->
+<div id="apStoryViewer">
+  <div class="ap-story-header">
+    <div class="flex items-center gap-3">
+      <img id="apStoryAvatar" class="w-10 h-10 rounded-full object-cover">
+      <div>
+        <div id="apStoryName" class="font-bold text-sm"></div>
+        <div id="apStoryTime" class="text-xs text-gray-300"></div>
+      </div>
+    </div>
+    <button onclick="closeAPStory()" class="p-2 text-white text-xl">✕</button>
+  </div>
+  <img id="apStoryImage" src="">
+</div>
+
+
+<!-- ================================
+     CHAT INFO MODAL
+================================= -->
+<div id="apChatInfoModal"
+ class="hidden fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center">
+
+  <div class="bg-gray-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto">
+
+    <div class="flex justify-between items-center mb-5">
+      <h2 class="font-bold text-lg">Chat Info</h2>
+      <button onclick="closeAPChatInfo()" class="text-gray-400 text-xl">✕</button>
+    </div>
+
+    <div class="ap-switch-row">
+      <span>Typing Indicator</span>
+      <label class="ap-switch">
+        <input id="apTypingSwitch" type="checkbox" checked
+          onchange="saveAPChatSetting('typingEnabled',this.checked)">
+        <span class="ap-slider"></span>
+      </label>
+    </div>
+
+    <div class="ap-switch-row">
+      <span>Read Receipts</span>
+      <label class="ap-switch">
+        <input id="apReadSwitch" type="checkbox" checked
+          onchange="saveAPChatSetting('readReceipts',this.checked)">
+        <span class="ap-slider"></span>
+      </label>
+    </div>
+
+    <button onclick="setAPNickname()"
+      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-3">
+      Set Nickname
+    </button>
+
+    <button onclick="toggleAPPinChat()"
+      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-2">
+      Pin / Unpin Chat
+    </button>
+
+    <button onclick="toggleAPMute()"
+      class="w-full text-left p-3 rounded-xl bg-gray-800 mt-2">
+      Notifications & Sound
+    </button>
+
+    <button onclick="apBlockActiveUser()"
+      class="w-full text-left p-3 rounded-xl bg-red-950 text-red-300 mt-2">
+      Block User
+    </button>
+
+    <button onclick="apRestrictActiveUser()"
+      class="w-full text-left p-3 rounded-xl bg-yellow-950 text-yellow-300 mt-2">
+      Restrict User
+    </button>
+
+  </div>
+</div>
+
+
+<script>
+/* =============================================
+   APCHAT MESSENGER FEATURE EXTENSION
+   Existing Login/Register functions untouched
+============================================= */
+
+let apChatMeta = {};
+let apNicknames = {};
+let apUserStatus = {};
+let apConversationListener = null;
+let apMetaListener = null;
+let apStatusListener = null;
+let apLongPressTimer = null;
+
+
+/* Unique conversation ID */
+function apConversationId(a,b){
+  return [a,b].sort().join('_');
+}
+
+
+/* Emoji detection */
+function apIsEmojiOnly(text){
+  if(!text) return false;
+
+  const cleaned = text.trim();
+
+  /* No normal letters or numbers */
+  if(/[a-zA-Z0-9\u0980-\u09FF]/.test(cleaned)) return false;
+
+  /* Must contain emoji-like characters */
+  return cleaned.length > 0 &&
+    /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(cleaned);
+}
+
+
+/* Time formatting */
+function apFormatTime(timestamp){
+  if(!timestamp) return '';
+
+  const d = new Date(timestamp);
+  const now = new Date();
+
+  const diff = now - d;
+
+  if(diff < 60000) return 'Now';
+  if(diff < 3600000) return Math.floor(diff/60000)+'m';
+
+  if(d.toDateString() === now.toDateString()){
+    return d.toLocaleTimeString([],{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  }
+
+  return d.toLocaleDateString([],{
+    month:'short',
+    day:'numeric'
+  });
+}
+
+
+function apLastActive(timestamp){
+  if(!timestamp) return 'Offline';
+
+  const diff = Date.now() - timestamp;
+
+  if(diff < 60000) return 'Active now';
+  if(diff < 3600000)
+    return Math.floor(diff/60000)+' minutes ago';
+
+  if(diff < 86400000)
+    return Math.floor(diff/3600000)+' hours ago';
+
+  return 'Active '+new Date(timestamp).toLocaleDateString();
+}
+
+
+/* =============================================
+   USER ONLINE STATUS
+============================================= */
+
+function apStartPresence(){
+
+  if(!currentUser) return;
+
+  const ref = db.ref('userStatus/'+currentUser.uid);
+
+  const onlineData = {
+    online:true,
+    lastActive:firebase.database.ServerValue.TIMESTAMP
+  };
+
+  ref.set(onlineData);
+
+  ref.onDisconnect().set({
+    online:false,
+    lastActive:firebase.database.ServerValue.TIMESTAMP
+  });
+
+  db.ref('userStatus').on('value',snap=>{
+    apUserStatus = snap.val() || {};
+    if(typeof renderUI === 'function') apRenderMessengerChatList();
+  });
+}
+
+
+/* =============================================
+   NICKNAMES
+============================================= */
+
+function apListenNicknames(){
+
+  if(!currentUser) return;
+
+  db.ref('nicknames/'+currentUser.uid).on('value',snap=>{
+    apNicknames = snap.val() || {};
+
+    if(activeChatUserId){
+      const u = allUsers[activeChatUserId] || {};
+      $('activeChatName').textContent =
+        apNicknames[activeChatUserId] ||
+        u.name ||
+        'User';
+    }
+
+    apRenderMessengerChatList();
+  });
+}
+
+
+async function setAPNickname(){
+
+  if(!currentUser || !activeChatUserId) return;
+
+  const u = allUsers[activeChatUserId] || {};
+
+  const old = apNicknames[activeChatUserId] || '';
+
+  const name = prompt(
+    'এই বন্ধুর জন্য Nickname লিখুন:',
+    old
+  );
+
+  if(name === null) return;
+
+  const clean = name.trim().slice(0,40);
+
+  try{
+
+    if(clean){
+      await db.ref(
+        'nicknames/'+currentUser.uid+'/'+activeChatUserId
+      ).set(clean);
+    }else{
+      await db.ref(
+        'nicknames/'+currentUser.uid+'/'+activeChatUserId
+      ).remove();
+    }
+
+  }catch(e){
+    alert('Nickname save হয়নি: '+e.message);
+  }
+}
+
+
+/* =============================================
+   CHAT META / LAST MESSAGE / UNREAD
+============================================= */
+
+function apListenChatMeta(){
+
+  if(!currentUser) return;
+
+  db.ref('chatMeta/'+currentUser.uid).on('value',snap=>{
+
+    apChatMeta = snap.val() || {};
+
+    apRenderMessengerChatList();
+
+  });
+}
+
+
+function apGetDisplayName(uid){
+
+  const u = allUsers[uid] || {};
+
+  return apNicknames[uid] ||
+    u.name ||
+    'APCHAT User';
+}
+
+
+function apRenderMessengerChatList(){
+
+  if(!currentUser) return;
+
+  const container = $('chatsView');
+
+  if(!container) return;
+
+  const entries = Object.entries(apChatMeta)
+    .filter(([uid])=>uid !== currentUser.uid)
+    .sort((a,b)=>{
+
+      const A = a[1] || {};
+      const B = b[1] || {};
+
+      const pinA = A.pinned ? 1 : 0;
+      const pinB = B.pinned ? 1 : 0;
+
+      if(pinA !== pinB) return pinB-pinA;
+
+      return (B.lastMessageAt||0) -
+        (A.lastMessageAt||0);
+    });
+
+  container.innerHTML='';
+
+  if(!entries.length){
+
+    container.innerHTML =
+      '<div class="p-6 text-center text-sm text-gray-500">'+
+      'No conversations yet.'+
+      '</div>';
+
+    return;
+  }
+
+  entries.forEach(([uid,meta])=>{
+
+    const u = allUsers[uid] || {};
+
+    const status = apUserStatus[uid] || {};
+
+    const avatar =
+      u.avatar ||
+      avatarFallback;
+
+    const name =
+      apGetDisplayName(uid);
+
+    const preview =
+      meta.lastMessage ||
+      'Start a conversation';
+
+    const unread =
+      Number(meta.unreadCount || 0);
+
+    const isStory =
+      u.hasActiveStory === true;
+
+    const row = document.createElement('div');
+
+    row.className='ap-chat-row';
+
+    const avatarClass =
+      isStory
+      ? 'ap-avatar-wrap ap-story-ring'
+      : 'ap-avatar-wrap';
+
+    row.innerHTML=`
+
+      <div class="${avatarClass}">
+
+        <img
+          src="${esc(avatar)}"
+          class="ap-chat-avatar"
+        >
+
+        ${status.online
+          ? '<span class="ap-online-dot"></span>'
+          : ''
+        }
+
+      </div>
+
+      <div class="ap-chat-main">
+
+        <div class="ap-chat-top">
+
+          <div class="ap-chat-name">
+            ${meta.pinned
+              ? '<span class="ap-pinned-label">📌</span>'
+              : ''
+            }
+            ${esc(name)}
+          </div>
+
+          <span class="ap-chat-time">
+            ${apFormatTime(meta.lastMessageAt)}
+          </span>
+
+        </div>
+
+        <div class="ap-chat-bottom">
+
+          <div class="ap-chat-preview">
+            ${esc(preview)}
+          </div>
+
+          ${unread>0
+            ? `<span class="ap-unread-badge">${
+                unread>99?'99+':unread
+              }</span>`
+            : ''
+          }
+
+        </div>
+
+      </div>
+    `;
+
+    row.onclick = ()=>openChat(uid);
+
+    container.appendChild(row);
+  });
+}
+
+
+/* =============================================
+   PIN CHAT - MAXIMUM 3
+============================================= */
+
+async function toggleAPPinChat(){
+
+  if(!currentUser || !activeChatUserId) return;
+
+  const ref =
+    db.ref(
+      'chatMeta/'+
+      currentUser.uid+'/'+
+      activeChatUserId
+    );
+
+  const snap = await ref.once('value');
+
+  const meta = snap.val() || {};
+
+  if(!meta.pinned){
+
+    const allSnap =
+      await db.ref(
+        'chatMeta/'+currentUser.uid
+      ).once('value');
+
+    const all = allSnap.val() || {};
+
+    const count =
+      Object.values(all)
+      .filter(x=>x && x.pinned)
+      .length;
+
+    if(count >= 3){
+
+      alert(
+        'সর্বোচ্চ ৩টি Chat Pin করা যাবে।'
+      );
+
+      return;
+    }
+  }
+
+  await ref.update({
+    pinned:!meta.pinned
+  });
+}
+
+
+/* =============================================
+   CHAT SETTINGS
+============================================= */
+
+async function saveAPChatSetting(key,value){
+
+  if(!currentUser || !activeChatUserId) return;
+
+  const cid =
+    apConversationId(
+      currentUser.uid,
+      activeChatUserId
+    );
+
+  try{
+
+    await db.ref(
+      'conversationSettings/'+
+      currentUser.uid+'/'+cid+'/'+key
+    ).set(value);
+
+  }catch(e){
+    alert('Setting save হয়নি: '+e.message);
+  }
+}
+
+
+async function apLoadChatSettings(){
+
+  if(!currentUser || !activeChatUserId) return;
+
+  const cid =
+    apConversationId(
+      currentUser.uid,
+      activeChatUserId
+    );
+
+  const snap =
+    await db.ref(
+      'conversationSettings/'+
+      currentUser.uid+'/'+cid
+    ).once('value');
+
+  const data = snap.val() || {};
+
+  $('apTypingSwitch').checked =
+    data.typingEnabled !== false;
+
+  $('apReadSwitch').checked =
+    data.readReceipts !== false;
+}
+
+
+function openAPChatInfo(){
+
+  if(!activeChatUserId) return;
+
+  $('apChatInfoModal')
+    .classList.remove('hidden');
+
+  apLoadChatSettings();
+}
+
+
+function closeAPChatInfo(){
+
+  $('apChatInfoModal')
+    .classList.add('hidden');
+}
+
+
+async function toggleAPMute(){
+
+  if(!currentUser || !activeChatUserId) return;
+
+  const cid =
+    apConversationId(
+      currentUser.uid,
+      activeChatUserId
+    );
+
+  const ref =
+    db.ref(
+      'conversationSettings/'+
+      currentUser.uid+'/'+cid+'/muted'
+    );
+
+  const snap = await ref.once('value');
+
+  await ref.set(!snap.val());
+
+  alert(
+    snap.val()
+      ? 'Notifications চালু হয়েছে।'
+      : 'Notifications mute করা হয়েছে।'
+  );
+}
+
+
+/* =============================================
+   BLOCK / RESTRICT
+============================================= */
+
+async function apBlockActiveUser(){
+
+  if(!activeChatUserId || !currentUser) return;
+
+  if(!confirm('এই User-কে Block করবেন?'))
+    return;
+
+  try{
+
+    await db.ref(
+      'blocked/'+
+      currentUser.uid+'/'+
+      activeChatUserId
+    ).set(true);
+
+    closeAPChatInfo();
+
+    if(typeof closeChat === 'function')
+      closeChat();
+
+  }catch(e){
+
+    alert('Block করা যায়নি: '+e.message);
+  }
+}
+
+
+async function apRestrictActiveUser(){
+
+  if(!activeChatUserId || !currentUser) return;
+
+  try{
+
+    const ref =
+      db.ref(
+        'restricted/'+
+        currentUser.uid+'/'+
+        activeChatUserId
+      );
+
+    const snap =
+      await ref.once('value');
+
+    await ref.set(!snap.val());
+
+    alert(
+      snap.val()
+        ? 'User Unrestricted হয়েছে।'
+        : 'User Restricted হয়েছে।'
+    );
+
+  }catch(e){
+
+    alert('পরিবর্তন করা যায়নি: '+e.message);
+  }
+}
+
+
+/* =============================================
+   MESSAGE LONG PRESS
+============================================= */
+
+function apShowMessageMenu(message,element){
+
+  document
+    .querySelector('.ap-message-menu')
+    ?.remove();
+
+  const menu =
+    document.createElement('div');
+
+  menu.className='ap-message-menu';
+
+  const react =
+    document.createElement('button');
+
+  react.textContent='❤️';
+
+  react.onclick=()=>{
+
+    alert('Reaction system next update-এ message-এর সঙ্গে save করা যাবে।');
+
+    menu.remove();
+  };
+
+
+  const reply =
+    document.createElement('button');
+
+  reply.textContent='Reply';
+
+  reply.onclick=()=>{
+
+    const input=$('messageInput');
+
+    input.value =
+      '↩ '+(message.text||'').slice(0,60)+'\n';
+
+    input.focus();
+
+    menu.remove();
+  };
+
+
+  const del =
+    document.createElement('button');
+
+  del.textContent='Delete';
+
+  del.onclick=async()=>{
+
+    if(message.sender !== currentUser.uid){
+
+      alert(
+        'আপনি শুধু নিজের Message Delete করতে পারবেন।'
+      );
+
+      menu.remove();
+
+      return;
+    }
+
+    if(!confirm('এই Message Delete করবেন?')){
+
+      menu.remove();
+
+      return;
+    }
+
+    menu.remove();
+  };
+
+
+  menu.append(
+    react,
+    reply,
+    del
+  );
+
+  document.body.appendChild(menu);
+
+  const r =
+    element.getBoundingClientRect();
+
+  menu.style.left =
+    Math.max(
+      8,
+      Math.min(
+        window.innerWidth-240,
+        r.left
+      )
+    )+'px';
+
+  menu.style.top =
+    Math.max(
+      8,
+      r.top-55
+    )+'px';
+
+
+  setTimeout(()=>{
+
+    const close=e=>{
+
+      if(!menu.contains(e.target)){
+
+        menu.remove();
+
+        document.removeEventListener(
+          'pointerdown',
+          close
+        );
+      }
+    };
+
+    document.addEventListener(
+      'pointerdown',
+      close
+    );
+
+  },100);
+}
+
+
+function apBindMessageActions(
+  bubble,
+  message
+){
+
+  let timer=null;
+
+  bubble.addEventListener(
+    'touchstart',
+    ()=>{
+
+      timer=setTimeout(()=>{
+
+        apShowMessageMenu(
+          message,
+          bubble
+        );
+
+      },700);
+
+    },
+    {passive:true}
+  );
+
+  [
+    'touchend',
+    'touchmove',
+    'touchcancel'
+  ].forEach(event=>{
+
+    bubble.addEventListener(
+      event,
+      ()=>clearTimeout(timer)
+    );
+
+  });
+
+
+  bubble.addEventListener(
+    'click',
+    ()=>{
+
+      const time =
+        bubble.querySelector(
+          '.ap-message-time'
+        );
+
+      if(time)
+        time.classList.toggle('show');
+
+    }
+  );
+}
+
+
+/* =============================================
+   TYPING INDICATOR
+============================================= */
+
+let apTypingTimeout=null;
+
+function apStartTyping(){
+
+  if(!currentUser ||
+     !activeChatUserId)
+    return;
+
+  const cid =
+    apConversationId(
+      currentUser.uid,
+      activeChatUserId
+    );
+
+  const ref =
+    db.ref(
+      'typing/'+
+      cid+'/'+
+      currentUser.uid
+    );
+
+  ref.set(true);
+
+  clearTimeout(apTypingTimeout);
+
+  apTypingTimeout=setTimeout(()=>{
+
+    ref.remove();
+
+  },1500);
+}
+
+
+$('messageInput')?.addEventListener(
+  'input',
+  apStartTyping
+);
+
+
+/* =============================================
+   NOTIFICATIONS
+============================================= */
+
+async function apEnableNotifications(){
+
+  if(!('Notification' in window))
+    return;
+
+  if(Notification.permission === 'default'){
+
+    try{
+      await Notification.requestPermission();
+    }catch(e){}
+  }
+}
+
+
+function apShowNotification(
+  title,
+  body
+){
+
+  if(
+    'Notification' in window &&
+    Notification.permission === 'granted' &&
+    document.hidden
+  ){
+
+    try{
+
+      new Notification(title,{
+        body:body,
+        icon:'./icon-192.png'
+      });
+
+    }catch(e){}
+  }
+}
+
+
+/* =============================================
+   STORIES
+   24-hour expiry + full screen viewer
+============================================= */
+
+async function apLoadUserStory(uid){
+
+  try{
+
+    const snap =
+      await db.ref(
+        'stories/'+uid
+      ).once('value');
+
+    const stories =
+      snap.val() || {};
+
+    const now=Date.now();
+
+    const valid =
+      Object.entries(stories)
+      .filter(([id,s])=>
+        s &&
+        s.createdAt &&
+        now-s.createdAt < 86400000
+      )
+      .sort((a,b)=>
+        (a[1].createdAt||0)-
+        (b[1].createdAt||0)
+      );
+
+    return valid;
+
+  }catch(e){
+
+    return [];
+  }
+}
+
+
+async function openAPStory(uid){
+
+  const stories =
+    await apLoadUserStory(uid);
+
+  if(!stories.length){
+
+    alert('কোনো Active Story নেই।');
+
+    return;
+  }
+
+  const story =
+    stories[0][1];
+
+  const user =
+    allUsers[uid] || {};
+
+  $('apStoryViewer')
+    .classList.add('show');
+
+  $('apStoryImage').src =
+    story.url || '';
+
+  $('apStoryAvatar').src =
+    user.avatar ||
+    avatarFallback;
+
+  $('apStoryName').textContent =
+    user.name ||
+    'APCHAT User';
+
+  $('apStoryTime').textContent =
+    apFormatTime(story.createdAt);
+
+  /* Save story view */
+  if(currentUser){
+
+    db.ref(
+      'storyViews/'+
+      uid+'/'+
+      stories[0][0]+'/'+
+      currentUser.uid
+    ).set({
+      viewedAt:
+        firebase.database.ServerValue.TIMESTAMP
+    }).catch(()=>{});
+  }
+}
+
+
+function closeAPStory(){
+
+  $('apStoryViewer')
+    .classList.remove('show');
+
+  $('apStoryImage').src='';
+}
+
+
+/* =============================================
+   ADD INFO BUTTON TO CHAT HEADER
+============================================= */
+
+function apAddInfoButton(){
+
+  const header =
+    document.querySelector(
+      '#activeChatInterface header'
+    );
+
+  if(!header) return;
+
+  if(
+    document.getElementById(
+      'apChatInfoBtn'
+    )
+  ) return;
+
+  const button =
+    document.createElement('button');
+
+  button.id='apChatInfoBtn';
+
+  button.className=
+    'ml-auto p-2 text-gray-300';
+
+  button.innerHTML='ℹ️';
+
+  button.onclick=openAPChatInfo;
+
+  header.appendChild(button);
+}
+
+
+/* =============================================
+   INITIALIZATION
+============================================= */
+
+const apOriginalShowApp =
+  typeof showApp === 'function'
+  ? showApp
+  : null;
+
+
+if(apOriginalShowApp){
+
+  window.showApp=function(){
+
+    apOriginalShowApp();
+
+    setTimeout(()=>{
+
+      apStartPresence();
+
+      apListenNicknames();
+
+      apListenChatMeta();
+
+      apAddInfoButton();
+
+      apEnableNotifications();
+
+    },300);
+  };
+}
+
+
+/* Refresh info button after opening chat */
+
+const apOriginalOpenChat =
+  typeof openChat === 'function'
+  ? openChat
+  : null;
+
+
+if(apOriginalOpenChat){
+
+  window.openChat=function(uid){
+
+    apOriginalOpenChat(uid);
+
+    setTimeout(()=>{
+
+      apAddInfoButton();
+
+      apLoadChatSettings();
+
+      /* Clear unread messages */
+
+      if(currentUser){
+
+        db.ref(
+          'chatMeta/'+
+          currentUser.uid+'/'+uid+
+          '/unreadCount'
+        ).set(0).catch(()=>{});
+      }
+
+    },100);
+  };
+}
+
+
+/* Update presence when page visibility changes */
+
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+
+    if(!currentUser) return;
+
+    db.ref(
+      'userStatus/'+
+      currentUser.uid
+    ).update({
+      online:!document.hidden,
+      lastActive:
+        firebase.database.ServerValue.TIMESTAMP
+    }).catch(()=>{});
+
+  }
+);
+</script>
 </body>
 </html>
