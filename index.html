@@ -1722,48 +1722,50 @@ if(apOriginalOpenChat){
 
 
 /* Update presence when page visibility changes */
-
 /* =========================================
-   APCHAT OLD DATA RESTORE
-   Does NOT touch Login or Registration
+   APCHAT FIREBASE DATA CHECK
+   Temporary diagnostic - does not change login
 ========================================= */
 
-function apRestoreOldMessengerData(){
+setInterval(async function(){
 
-  if(!currentUser || !db) return;
+  if(!currentUser || !currentUser.uid || window.__apDataChecked) return;
 
-  /* পুরোনো Profile/Friends data আবার লোড */
-  db.ref('profiles').once('value').then(snap=>{
-    allUsers = snap.val() || {};
-    renderUI();
-  }).catch(e=>{
-    console.error('Profile restore error:', e);
-  });
+  window.__apDataChecked = true;
 
-  db.ref('friends/'+currentUser.uid).once('value').then(snap=>{
-    friendships = snap.val() || {};
-    renderUI();
-  }).catch(e=>{
-    console.error('Friends restore error:', e);
-  });
+  try{
+    const [profilesSnap, friendsSnap, requestsSnap] =
+      await Promise.all([
+        db.ref('profiles').once('value'),
+        db.ref('friends/' + currentUser.uid).once('value'),
+        db.ref('friendRequests/' + currentUser.uid).once('value')
+      ]);
 
-  db.ref('friendRequests/'+currentUser.uid).once('value').then(snap=>{
-    incomingRequests = snap.val() || {};
-    renderUI();
-  }).catch(e=>{
-    console.error('Requests restore error:', e);
-  });
-}
+    const profileCount =
+      Object.keys(profilesSnap.val() || {}).length;
 
+    const friendsData =
+      friendsSnap.val() || {};
 
-/* Login হওয়ার পরে পুরোনো data আবার load করো */
-const apRestoreTimer = setInterval(()=>{
+    const requestData =
+      requestsSnap.val() || {};
 
-  if(currentUser){
+    alert(
+      'Firebase Data Check\n\n' +
+      'Profiles: ' + profileCount + '\n' +
+      'Friends: ' + Object.keys(friendsData).length + '\n' +
+      'Friend Requests: ' + Object.keys(requestData).length
+    );
 
-    apRestoreOldMessengerData();
+  }catch(e){
 
-    clearInterval(apRestoreTimer);
+    console.error('Firebase data check:', e);
+
+    alert(
+      'Firebase থেকে Data পড়তে সমস্যা হচ্ছে:\n\n' +
+      (e.code || '') + '\n' +
+      e.message
+    );
   }
 
 }, 500);
