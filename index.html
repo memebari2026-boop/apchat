@@ -107,12 +107,14 @@ async function handleRegister(){
  if(!auth||!db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
  const name=$('regName').value.trim(),handle=cleanHandle($('regHandle').value),phone=cleanPhone($('regPhone').value),password=$('regPassword').value,privacy=$('regPrivacy').value;
  if(!name||!handle||!phone||!password)return status('সব ঘর পূরণ করুন।');if(!/^[a-z0-9_]{3,24}$/.test(handle))return status('APCHAT ID ৩-২৪ অক্ষরের হতে হবে।');if(phone.length<7||phone.length>15)return status('সঠিক ফোন নম্বর দিন।');if(password.length<6)return status('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
- $('registerBtn').disabled=true;status('অ্যাকাউন্ট তৈরি হচ্ছে...');let cred=null,reserved=false;
+ $('registerBtn').disabled=true;status('অ্যাকাউন্ট তৈরি হচ্ছে...');let cred=null;
  try{
+  const handleSnap=await db.ref('handles/'+handle).once('value');
+  if(handleSnap.exists())throw Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে। অন্য আইডি দিন।');
+
   cred=await auth.createUserWithEmailAndPassword(phoneEmail(phone),password);
-  const tx=await db.ref('handles/'+handle).transaction(v=>v===null?cred.user.uid:undefined);
-  if(!tx.committed)throw Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে।');
-  reserved=true;
+  await db.ref('handles/'+handle).set(cred.user.uid);
+
   const profile={uid:cred.user.uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};
   await db.ref().update({
     ['profiles/'+cred.user.uid]:profile,
@@ -120,7 +122,6 @@ async function handleRegister(){
   });
   currentUser=profile; showApp(); status('');
  }catch(e){
-  if(reserved&&cred?.user)await db.ref('handles/'+handle).remove().catch(()=>{});
   if(cred?.user)await cred.user.delete().catch(()=>{});
   currentUser=null; showAuth(); status(authError(e));
  }finally{$('registerBtn').disabled=false}
