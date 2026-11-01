@@ -133,7 +133,12 @@ window.switchAuthView=switchAuthView; window.handleLogin=handleLogin; window.han
 document.addEventListener('DOMContentLoaded',()=>{const registerBtn=document.getElementById('registerBtn');if(registerBtn) registerBtn.addEventListener('click',e=>{e.preventDefault();handleRegister();});});
 function detach(path,cb,event='value'){db.ref(path).off(event,cb)}
 function stopListeners(){rootListeners.forEach(x=>detach(x.path,x.cb,x.event||'value'));rootListeners=[];chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];listenersStarted=false;if(currentUser){db.ref('presence/'+currentUser.uid).onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('presence/'+currentUser.uid).update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('typing').child(currentUser.uid).child(activeChatUserId||'_').child(currentUser.uid).remove().catch(()=>{})}}
-async function logout(){if(!confirm('লগআউট করবেন?'))return;stopListeners();await auth.signOut()}
+async function logout(){
+  if(!confirm('লগআউট করবেন?'))return;
+  stopListeners();
+  await auth.signOut();
+  showAuth();
+}
 function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
 function startListeners(){
   if(!currentUser||listenersStarted)return; listenersStarted=true;
@@ -174,7 +179,6 @@ function renderUI(){
   [chats,req,msgs,sent,people].forEach(x=>x.innerHTML='');
   const q=$('searchInput').value.trim().toLowerCase().replace(/^@/,'');
   
-  // Combine all users from allUsers and profileDirectory for Discover
   const combinedUsers = {...allUsers};
   db.ref('profileDirectory').once('value').then(snap=>{
     const dir = snap.val() || {};
@@ -296,7 +300,6 @@ async function writeMessage(record){
   if(!activeChatUserId)throw Error('চ্যাট নির্বাচন করা হয়নি।');
   const key=db.ref().child('messageKey').push().key, m={...record,replyTo:replyTo?{...replyTo}:null,id:key,sender:currentUser.uid,receiver:activeChatUserId,status:'sent',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()};
   const u={}; u[chatPath(currentUser.uid,activeChatUserId)+'/'+key]=m; u[chatPath(activeChatUserId,currentUser.uid)+'/'+key]=m;
-  // Update chatMeta for chat list
   u['chatMeta/'+currentUser.uid+'/'+activeChatUserId]={lastMessage:m.text||'Media',lastMessageAt:m.createdAt,unreadCount:0};
   await db.ref().update(u); return key;
 }
@@ -315,7 +318,6 @@ async function sendMedia(file,type){if(!file)return;try{const url=await uploadTo
 async function uploadPhoto(file){if(!file)return;try{const url=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; alert('Profile photo updated');}catch(e){alert(e.message);}}
 function chooseProfilePhoto(){$('photoInput').click()}
 
-/* সুরক্ষিত এবং এরর-মুক্ত প্রাইভেসি সেটিংস সেভ ফাংশন */
 function togglePrivacySettings(){
   if(!currentUser)return;
   $('privacySelect').value=currentUser.privacy||'public';
@@ -335,6 +337,86 @@ async function savePrivacySettings(){
     alert('Save failed: '+e.message);
   }
 }
+
+/* Privacy Lists Management (Blocked, Restricted, Muted & Photo Loves) */
+async function showPrivacyList(type){
+  const listEl=$('privacyAccountList'); listEl.innerHTML='<p class="text-xs text-gray-400">Loading...</p>';
+  try{
+    const snap=await db.ref(type+'/'+currentUser.uid).once('value');
+    const data=snap.val()||{};
+    const uids=Object.keys(data);
+    listEl.innerHTML='';
+    if(uids.length===0){
+      listEl.innerHTML=`<p class="text-xs text-gray-400">No ${type} accounts.</p>`;
+      return;
+    }
+    uids.forEach(async peerId=>{
+      const pSnap=await db.ref('profiles/'+peerId).once('value');
+      const p=pSnap.val()||{};
+      const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2';
+      row.innerHTML=`<span><b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span>`;
+      const unBtn=document.createElement('button'); unBtn.textContent='Remove'; unBtn.className='text-xs bg-red-600 px-2 py-1 rounded';
+      unBtn.onclick=async()=>{
+        await db.ref(type+'/'+currentUser.uid+'/'+peerId).remove();
+        row.remove();
+      };
+      row.append(unBtn);
+      listEl.append(row);
+    });
+  }catch(e){listEl.innerHTML='<p class="text-xs text-red-400">Error loading list</p>';}
+}
+
+async function showMyPhotoLoves(){
+  const listEl=$('privacyAccountList'); listEl.innerHTML='<p class="text-xs text-gray-400">Loading...</p>';
+  try{
+    const snap=await db.ref('profilePhotoLoves/'+currentUser.uid).once('value');
+    const data=snap.val()||{};
+    const uids=Object.keys(data);
+    listEl.innerHTML='';
+    if(uids.length===0){
+      listEl.innerHTML='<p class="text-xs text-gray-400"> কেউ এখনো আপনার প্রোফাইল পিকচারে লাভ রিয়্যাক্ট দেয়নি।</p>';
+      return;
+    }
+    uids.forEach(async reactorId=>{
+      const pSnap=await db.ref('profiles/'+reactorId).once('value');
+      const p=pSnap.val()||{};
+      const row=document.createElement('div'); row.className='flex items-center justify-between bg-gray-800 rounded-xl p-2';
+      row.innerHTML=`<span>❤️ <b>${esc(p.name||'User')}</b> (@${esc(p.handle||'')})</span><span class="text-xs text-pink-400 font-bold">Loved</span>`;
+      listEl.append(row);
+    });
+  }catch(e){listEl.innerHTML='<p class="text-xs text-red-400">Error loading loves</p>';}
+}
+
+function showUserProfile(uid){
+  if(!uid)return;
+  db.ref('profiles/'+uid).once('value').then(snap=>{
+    const u=snap.val(); if(!u)return;
+    $('userProfileRealName').textContent=u.name||'User';
+    $('userProfileHandle').textContent='@'+(u.handle||'');
+    $('userProfileBio').textContent=u.bio||'Using APCHAT';
+    $('userProfilePrivacy').textContent='Account: '+(u.privacy||'public');
+    $('userProfilePhoto').src=fallback;
+    db.ref('profilePhotos/'+uid).once('value').then(ps=>{if(ps.val()?.url)$('userProfilePhoto').src=ps.val().url});
+    
+    // Check if viewing someone else's profile photo -> add love button option if public or friend
+    let loveDiv=$('userProfileModal').querySelector('#profileLoveAction');
+    if(!loveDiv){
+      loveDiv=document.createElement('div'); loveDiv.id='profileLoveAction'; loveDiv.className='mt-3';
+      $('userProfileModal').querySelector('.bg-gray-900').append(loveDiv);
+    }
+    loveDiv.innerHTML='';
+    if(uid!==currentUser.uid){
+      const loveBtn=document.createElement('button'); loveBtn.className='px-4 py-2 bg-pink-600 rounded-xl text-xs font-bold text-white'; loveBtn.textContent='❤️ Give Profile Photo Love';
+      loveBtn.onclick=async()=>{
+        await db.ref('profilePhotoLoves/'+uid+'/'+currentUser.uid).set({at:Date.now()});
+        alert('❤️ Profile photo loved successfully!');
+      };
+      loveDiv.append(loveBtn);
+    }
+    $('userProfileModal').classList.remove('hidden');
+  });
+}
+function closeUserProfile(){$('userProfileModal').classList.add('hidden')}
 
 /* Stories & Viewers list fully restored */
 async function uploadStory(file){
@@ -392,7 +474,6 @@ function viewStory(ownerUid,storyId,s){
   $('storyOwnerReactionPanel').classList.toggle('hidden',!isOwner);
 
   if(isOwner){
-    // Listen to views and reactions for story owner
     db.ref('storyViews/'+ownerUid+'/'+storyId).on('value', snap=>{
       const views = snap.val() || {};
       const viewersCount = Object.keys(views).length;
@@ -413,7 +494,6 @@ function viewStory(ownerUid,storyId,s){
       }
     });
   } else {
-    // Record story view for viewer
     db.ref('storyViews/'+ownerUid+'/'+storyId+'/'+currentUser.uid).set({viewedAt: Date.now()}).catch(()=>{});
   }
 
@@ -443,7 +523,7 @@ function showChatMoreMenu(anchor){
   document.querySelector('.chat-menu')?.remove(); if(!activeChatUserId)return;
   const uid=activeChatUserId, menu=document.createElement('div'); menu.className='chat-menu';
   const addButton=(label,fn)=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{menu.remove(); fn();}; menu.append(b);};
-  addButton('👤 Profile',()=>alert(uid));
+  addButton('👤 Profile',()=>showUserProfile(uid));
   addButton('🗑️ Delete chat',()=>deleteLocalChat(uid));
   document.body.append(menu);
   const r=anchor.getBoundingClientRect(); menu.style.left=Math.max(8,Math.min(innerWidth-260,r.right-245))+'px'; menu.style.top=(r.bottom+4)+'px';
