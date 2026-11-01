@@ -312,10 +312,10 @@ function openMediaViewer(url,type){const stage=$('mediaViewerStage');stage.inner
 function closeMediaViewer(){$('mediaViewer').classList.add('hidden'); $('mediaViewerStage').innerHTML='';}
 async function sendMedia(file,type){if(!file)return;try{const url=await uploadToCloudinary(file,type); await writeMessage({type,url});}catch(e){alert(e.message);}}
 
-async function uploadPhoto(file){if(!file)return;try{const url=updateAvatarLocally=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; alert('Profile photo updated');}catch(e){alert(e.message);}}
+async function uploadPhoto(file){if(!file)return;try{const url=await uploadToCloudinary(file,'image'); await db.ref('profilePhotos/'+currentUser.uid).set({url,updatedAt:Date.now()}); currentUser.avatar=url; $('myAvatar').src=url; alert('Profile photo updated');}catch(e){alert(e.message);}}
 function chooseProfilePhoto(){$('photoInput').click()}
 
-/* সম্পূর্ণ সুরক্ষিত এবং এরর-মুক্ত প্রাইভেসি সেটিংস সেভ ফাংশন */
+/* সুরক্ষিত এবং এরর-মুক্ত প্রাইভেসি সেটিংস সেভ ফাংশন */
 function togglePrivacySettings(){
   if(!currentUser)return;
   $('privacySelect').value=currentUser.privacy||'public';
@@ -325,13 +325,12 @@ function closePrivacyModal(){$('privacyModal').classList.add('hidden')}
 async function savePrivacySettings(){
   const v=$('privacySelect').value;
   try{
-    await db.ref().update({
-      ['profiles/'+currentUser.uid+'/privacy']:v,
-      ['profileDirectory/'+currentUser.uid+'/privacy']:v
-    });
+    await db.ref('profiles/'+currentUser.uid+'/privacy').set(v);
+    await db.ref('profileDirectory/'+currentUser.uid+'/privacy').set(v);
     currentUser.privacy=v;
     $('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;
     closePrivacyModal();
+    alert('Privacy updated successfully');
   }catch(e){
     alert('Save failed: '+e.message);
   }
