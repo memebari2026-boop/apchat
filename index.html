@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#030712">
-<title>APCHAT — Global Messenger</title>
+<title>APCHAT — Global Messenger (v12)</title>
 <link rel="manifest" href="./manifest.json">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 function detach(path,cb,event='value'){db.ref(path).off(event,cb)}
 function stopListeners(){rootListeners.forEach(x=>detach(x.path,x.cb,x.event||'value'));rootListeners=[];chatListeners.forEach(x=>detach(x.path,x.cb));chatListeners=[];listenersStarted=false;if(currentUser){db.ref('presence/'+currentUser.uid).onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('presence/'+currentUser.uid).update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});db.ref('typing').child(currentUser.uid).child(activeChatUserId||'_').child(currentUser.uid).remove().catch(()=>{})}}
 async function logout(){if(!confirm('লগআউট করবেন?'))return;stopListeners();await auth.signOut()}
-function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
+function watch(path,handler){const ref=db.ref(path);const cb=s=>handler(s.val()||{});const error=e=>{console.error('APCHAT listener failed:',path,e);const box=$('authStatus');if(box&&!$('authScreen').classList.contains('hidden'))box.textContent='Firebase data load failed ('+path+'): '+(e.code||e.message||'Unknown error');};ref.on('value',cb,error);rootListeners.push({path,cb})}
 function startListeners(){if(!currentUser||listenersStarted)return;listenersStarted=true;
  watch('profiles',v=>{
   // Backward-compatible source of truth: existing APCHAT accounts and friends live here.
@@ -1722,53 +1722,7 @@ if(apOriginalOpenChat){
 
 
 /* Update presence when page visibility changes */
-/* =========================================
-   APCHAT FIREBASE DATA CHECK
-   Temporary diagnostic - does not change login
-========================================= */
-
-setInterval(async function(){
-
-  if(!currentUser || !currentUser.uid || window.__apDataChecked) return;
-
-  window.__apDataChecked = true;
-
-  try{
-    const [profilesSnap, friendsSnap, requestsSnap] =
-      await Promise.all([
-        db.ref('profiles').once('value'),
-        db.ref('friends/' + currentUser.uid).once('value'),
-        db.ref('friendRequests/' + currentUser.uid).once('value')
-      ]);
-
-    const profileCount =
-      Object.keys(profilesSnap.val() || {}).length;
-
-    const friendsData =
-      friendsSnap.val() || {};
-
-    const requestData =
-      requestsSnap.val() || {};
-
-    alert(
-      'Firebase Data Check\n\n' +
-      'Profiles: ' + profileCount + '\n' +
-      'Friends: ' + Object.keys(friendsData).length + '\n' +
-      'Friend Requests: ' + Object.keys(requestData).length
-    );
-
-  }catch(e){
-
-    console.error('Firebase data check:', e);
-
-    alert(
-      'Firebase থেকে Data পড়তে সমস্যা হচ্ছে:\n\n' +
-      (e.code || '') + '\n' +
-      e.message
-    );
-  }
-alert('APCHAT TEST CODE RUNNING');
-}, 500);
+/* APCHAT v12: removed temporary Firebase diagnostic interval and test alerts. */
 </script>
 </body>
 </html>
