@@ -1740,6 +1740,32 @@ document.addEventListener(
 
   }
 );
+/* =========================================
+   RESTORE OLD CHAT LIST IF chatMeta IS EMPTY
+   Login system is NOT touched
+========================================= */
+
+const apOldChatListRenderer = apRenderMessengerChatList;
+
+apRenderMessengerChatList = function(){
+
+  const hasChatMeta =
+    apChatMeta &&
+    Object.keys(apChatMeta).length > 0;
+
+  /* নতুন chatMeta না থাকলে পুরোনো friends system দেখাও */
+  if(!hasChatMeta){
+
+    if(typeof renderUI === 'function'){
+      renderUI();
+    }
+
+    return;
+  }
+
+  /* chatMeta থাকলে নতুন Messenger-style chat list */
+  apOldChatListRenderer();
+}; 
 </script>
 </body>
 </html>
