@@ -103,29 +103,47 @@ function authError(e){const m={'auth/email-already-in-use':'এই ফোন ন
 function switchAuthView(v){$('viewLogin').classList.toggle('hidden',v!=='login');$('viewRegister').classList.toggle('hidden',v!=='register');status('')}
 function showAuth(){$('app').classList.add('hidden');$('authScreen').classList.remove('hidden')}
 function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;$('myAvatar').src=currentUser.avatar||fallback;if(innerWidth>=700){$('chatArea').classList.remove('hidden');$('chatArea').classList.add('flex')}startListeners();startPresence();renderUI();loadStories()}
+
+// ফিক্সড রেজিস্টার ফাংশন (ট্রানজাকশনের ঝামেলা বাদ দিয়ে সরাসরি চেক ও সেভ করা হয়েছে)
 async function handleRegister(){
  if(!auth||!db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
  const name=$('regName').value.trim(),handle=cleanHandle($('regHandle').value),phone=cleanPhone($('regPhone').value),password=$('regPassword').value,privacy=$('regPrivacy').value;
- if(!name||!handle||!phone||!password)return status('সব ঘর পূরণ করুন।');if(!/^[a-z0-9_]{3,24}$/.test(handle))return status('APCHAT ID ৩-২৪ অক্ষরের হতে হবে।');if(phone.length<7||phone.length>15)return status('সঠিক ফোন নম্বর দিন।');if(password.length<6)return status('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
- $('registerBtn').disabled=true;status('অ্যাকাউন্ট তৈরি হচ্ছে...');let cred=null;
+ if(!name||!handle||!phone||!password)return status('সব ঘর পূরণ করুন।');
+ if(!/^[a-z0-9_]{3,24}$/.test(handle))return status('APCHAT ID ৩-২৪ অক্ষরের হতে হবে।');
+ if(phone.length<7||phone.length>15)return status('সঠিক ফোন নম্বর দিন।');
+ if(password.length<6)return status('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+ 
+ $('registerBtn').disabled=true;
+ status('অ্যাকাউন্ট তৈরি হচ্ছে...');
+ let cred=null;
+ 
  try{
   const handleSnap=await db.ref('handles/'+handle).once('value');
   if(handleSnap.exists())throw Error('এই APCHAT ID আগে থেকেই ব্যবহৃত হচ্ছে। অন্য আইডি দিন।');
 
   cred=await auth.createUserWithEmailAndPassword(phoneEmail(phone),password);
-  await db.ref('handles/'+handle).set(cred.user.uid);
+  const uid=cred.user.uid;
 
-  const profile={uid:cred.user.uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};
-  await db.ref().update({
-    ['profiles/'+cred.user.uid]:profile,
-    ['profileDirectory/'+cred.user.uid]:{uid:cred.user.uid,name,handle,privacy,bio:'Using APCHAT',createdAt:Date.now()}
-  });
-  currentUser=profile; showApp(); status('');
+  const updates={};
+  updates['handles/'+handle]=uid;
+  updates['profiles/'+uid]={uid,name,handle,privacy,avatar:'',bio:'Using APCHAT',createdAt:firebase.database.ServerValue.TIMESTAMP};
+  updates['profileDirectory/'+uid]={uid,name,handle,privacy,bio:'Using APCHAT',createdAt:Date.now()};
+
+  await db.ref().update(updates);
+  currentUser={uid,name,handle,privacy,avatar:'',bio:'Using APCHAT'};
+  showApp();
+  status('');
  }catch(e){
+  console.error("Register Error:", e);
   if(cred?.user)await cred.user.delete().catch(()=>{});
-  currentUser=null; showAuth(); status(authError(e));
- }finally{$('registerBtn').disabled=false}
+  currentUser=null;
+  showAuth();
+  status(authError(e));
+ }finally{
+  $('registerBtn').disabled=false;
+ }
 }
+
 async function handleLogin(){
   if(!auth||!db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
   const phone=cleanPhone($('loginPhone').value), password=$('loginPassword').value;
