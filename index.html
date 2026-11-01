@@ -1723,49 +1723,50 @@ if(apOriginalOpenChat){
 
 /* Update presence when page visibility changes */
 
-document.addEventListener(
-  'visibilitychange',
-  ()=>{
-
-    if(!currentUser) return;
-
-    db.ref(
-      'userStatus/'+
-      currentUser.uid
-    ).update({
-      online:!document.hidden,
-      lastActive:
-        firebase.database.ServerValue.TIMESTAMP
-    }).catch(()=>{});
-
-  }
-);
 /* =========================================
-   RESTORE OLD CHAT LIST IF chatMeta IS EMPTY
-   Login system is NOT touched
+   APCHAT OLD DATA RESTORE
+   Does NOT touch Login or Registration
 ========================================= */
 
-const apOldChatListRenderer = apRenderMessengerChatList;
+function apRestoreOldMessengerData(){
 
-apRenderMessengerChatList = function(){
+  if(!currentUser || !db) return;
 
-  const hasChatMeta =
-    apChatMeta &&
-    Object.keys(apChatMeta).length > 0;
+  /* পুরোনো Profile/Friends data আবার লোড */
+  db.ref('profiles').once('value').then(snap=>{
+    allUsers = snap.val() || {};
+    renderUI();
+  }).catch(e=>{
+    console.error('Profile restore error:', e);
+  });
 
-  /* নতুন chatMeta না থাকলে পুরোনো friends system দেখাও */
-  if(!hasChatMeta){
+  db.ref('friends/'+currentUser.uid).once('value').then(snap=>{
+    friendships = snap.val() || {};
+    renderUI();
+  }).catch(e=>{
+    console.error('Friends restore error:', e);
+  });
 
-    if(typeof renderUI === 'function'){
-      renderUI();
-    }
+  db.ref('friendRequests/'+currentUser.uid).once('value').then(snap=>{
+    incomingRequests = snap.val() || {};
+    renderUI();
+  }).catch(e=>{
+    console.error('Requests restore error:', e);
+  });
+}
 
-    return;
+
+/* Login হওয়ার পরে পুরোনো data আবার load করো */
+const apRestoreTimer = setInterval(()=>{
+
+  if(currentUser){
+
+    apRestoreOldMessengerData();
+
+    clearInterval(apRestoreTimer);
   }
 
-  /* chatMeta থাকলে নতুন Messenger-style chat list */
-  apOldChatListRenderer();
-}; 
+}, 500);
 </script>
 </body>
 </html>
