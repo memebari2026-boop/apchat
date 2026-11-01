@@ -104,7 +104,7 @@ function switchAuthView(v){$('viewLogin').classList.toggle('hidden',v!=='login')
 function showAuth(){$('app').classList.add('hidden');$('authScreen').classList.remove('hidden')}
 function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('currentUserNameDisplay').textContent=(currentUser.name||'User')+' · @'+currentUser.handle;$('myAvatar').src=currentUser.avatar||fallback;if(innerWidth>=700){$('chatArea').classList.remove('hidden');$('chatArea').classList.add('flex')}startListeners();startPresence();renderUI();loadStories()}
 
-// ফিক্সড রেজিস্টার ফাংশন (ট্রানজাকশনের ঝামেলা বাদ দিয়ে সরাসরি চেক ও সেভ করা হয়েছে)
+// ফিক্সড রেজিস্টার ফাংশন
 async function handleRegister(){
  if(!auth||!db)return status(window.__firebaseInitError?.message||'Firebase ready হয়নি।');
  const name=$('regName').value.trim(),handle=cleanHandle($('regHandle').value),phone=cleanPhone($('regPhone').value),password=$('regPassword').value,privacy=$('regPrivacy').value;
@@ -170,23 +170,33 @@ async function logout(){
   await auth.signOut();
   showAuth();
 }
+
 function watch(path,handler){const cb=s=>handler(s.val()||{});db.ref(path).on('value',cb);rootListeners.push({path,cb})}
+
+// ফিক্সড ও ফুলপ্রুফ রিয়েল-টাইম লিসেনার (ডিসকভার ও চ্যাট লিস্ট ঠিক করার জন্য)
 function startListeners(){
   if(!currentUser||listenersStarted)return; listenersStarted=true;
   
-  watch('profiles',v=>{
-    allUsers={};
-    Object.entries(v||{}).forEach(([uid,p])=>{if(p&&typeof p==='object')allUsers[uid]={...p,uid:p.uid||uid};});
-    db.ref('profileDirectory').once('value').then(ds=>{
-      Object.entries(ds.val()||{}).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
-      renderUI(); renderStoryFriendChoices();
-    }).catch(()=>{renderUI(); renderStoryFriendChoices()});
-    renderUI(); renderStoryFriendChoices();
+  // ১. profiles রিয়েল-টাইম ওয়াচ
+  db.ref('profiles').on('value', snap => {
+    const data = snap.val() || {};
+    Object.entries(data).forEach(([uid, p]) => {
+      if(p && typeof p === 'object') {
+        allUsers[uid] = { ...p, uid: p.uid || uid };
+      }
+    });
+    renderUI();
+    renderStoryFriendChoices();
   });
-  
-  watch('profileDirectory',ds=>{
-    const dir=ds.val()||{};
-    Object.entries(dir).forEach(([uid,p])=>{if(!allUsers[uid]&&p)allUsers[uid]={...p,uid:p.uid||uid};});
+
+  // ২. profileDirectory রিয়েল-টাইম ওয়াচ
+  db.ref('profileDirectory').on('value', snap => {
+    const data = snap.val() || {};
+    Object.entries(data).forEach(([uid, p]) => {
+      if(p && typeof p === 'object') {
+        if(!allUsers[uid]) allUsers[uid] = { ...p, uid: p.uid || uid };
+      }
+    });
     renderUI();
   });
 
@@ -202,6 +212,7 @@ function startListeners(){
   watch('presence',v=>{window.presenceData=v||{}; renderUI()});
   setTimeout(attachIncomingNotifications,800);
 }
+
 function syncAcceptedMessageChats(requests){Object.entries(requests||{}).forEach(([peer,request])=>{if(request?.status!=='accepted'||chatAccess[peer]===true)return;const updates={};updates['chatAccess/'+currentUser.uid+'/'+peer]=true;updates['chatAccess/'+peer+'/'+currentUser.uid]=true;db.ref().update(updates).catch(e=>console.error(e))})}
 function formatLastSeen(ts){if(!ts)return '';const d=Math.max(0,Date.now()-ts),m=Math.floor(d/60000);if(m<1)return 'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d'}
 function attachIncomingNotifications(){if(!currentUser)return;notificationListeners.forEach(x=>db.ref(x.path).off('child_added',x.cb));notificationListeners=[];Object.entries(friendships||{}).filter(([,v])=>v==='accepted').forEach(([uid])=>{const path=chatPath(currentUser.uid,uid);let initial=true;const cb=snap=>{if(initial)return;const m=snap.val();if(!m||m.sender===currentUser.uid||mutedUsers[uid])return;notifyUser((allUsers[uid]?.name||'APCHAT')+': '+(m.text||m.fileName||'New message'));playNotificationSound()};db.ref(path).once('value').then(()=>{initial=false});db.ref(path).on('child_added',cb);notificationListeners.push({path,cb})})}
